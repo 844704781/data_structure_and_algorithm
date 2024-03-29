@@ -763,6 +763,8 @@ while True:
 
 节点
 
+Java
+
 ```java
 public static class HeroNode {
         /**
@@ -782,13 +784,40 @@ public static class HeroNode {
     }
 ```
 
+Python
+
+```python
+class HeroNode:
+    def __init__(self, no, name):
+        self.__no = no
+        self.__name = name
+        self.__next = None
+```
+
+
+
+
+
 链表
+
+Java
 
 ```java
     public static class LinkedList {
         private HeroNode head = new HeroNode(0, "");
     }
 ```
+
+Python
+
+```python
+class LinkedList:
+
+    def __init__(self):
+        self.__head = HeroNode(0, '')
+```
+
+
 
 #### 单链表相关操作
 
@@ -824,6 +853,22 @@ public static class HeroNode {
 
 
 ###### Python
+
+```python
+    def add(self, node):
+        '''
+        向链表尾部插入节点
+        :param node:
+        :return:
+        '''
+        temp = self.head
+
+        while temp is not None:
+            if temp.next is None:
+                temp.next = node
+                break
+            temp = temp.next
+```
 
 
 
@@ -885,6 +930,31 @@ public static class HeroNode {
 
 ###### Python
 
+```python
+ def add_by_order(self, node):
+        '''
+        按照编号大小向链表中插入节点
+        :param node:
+        :return:
+        '''
+        temp = self.head
+
+        while True:
+            if temp.next is None:
+                break
+            if temp.next.no == node.no:
+                raise ValueError("存在相同的no的node")
+
+            if temp.next.no > node.no:
+                break
+
+            temp = temp.next
+
+        node.next = temp.next
+        temp.next = node
+        pass
+```
+
 
 
 ##### 3.修改节点中的数据 
@@ -928,6 +998,22 @@ public static class HeroNode {
 
 ###### Python
 
+```python
+    def update(self, no, name):
+        '''
+        修改节点中的数据
+        :param no:
+        :param name:
+        :return:
+        '''
+        temp = self.head.next
+        while temp is not None:
+            if temp.no == no:
+                temp.name = name
+            temp = temp.next
+        pass
+```
+
 
 
 ##### 4.删除节点
@@ -967,6 +1053,26 @@ public static class HeroNode {
 
 ###### Python
 
+```python
+    def delete(self, no):
+        '''
+        删除节点
+        :param no:
+        :return:
+        '''
+        temp = self.head
+        while temp is not None:
+            if temp.next is None:
+                break
+            if temp.next.no == no:
+                temp.next = temp.next.next
+                break
+
+            temp = temp.next
+        pass
+
+```
+
 
 
 ##### 5.求链表中有效节点的个数(不统计头结点)
@@ -1004,6 +1110,21 @@ public static class HeroNode {
 
 
 ###### Python
+
+```python
+    def __len__(self):
+        '''
+        求链表中有效节点的个数(不统计头结点)
+        :return:
+        '''
+        temp = self.head.next
+        _len = 0
+        while temp is not None:
+            _len += 1
+            temp = temp.next
+        return _len
+
+```
 
 
 
@@ -1050,6 +1171,31 @@ public static class HeroNode {
 
 
 ###### Python
+
+```python
+
+    @staticmethod
+    def find_last_index_node(_list, k):
+        '''
+        查找链表的倒数第k个节点 (新浪面试题)
+        :param _list:
+        :param k:
+        :return:
+        '''
+        length = len(_list)
+        if k > length or k < 1:
+            raise IndexError("Invalid k")
+        n = length - k + 1
+
+        temp = _list.head.next
+        i = 1
+        while i < n:
+            temp = temp.next
+            i += 1
+
+        return temp
+
+```
 
 
 
@@ -1106,6 +1252,32 @@ public static class HeroNode {
 
 ###### Python
 
+```python
+    def revert(self):
+        '''
+        将单链表在原有的结构上反转 (腾讯面试题)
+        :return:
+        '''
+        # 定义反转链表头结点 revert_head
+        # 遍历原有单链表
+        # 定义next_node,记录当前节点current的next节点
+        # 将current节点插入revert_head和revert_head.next之间
+        # 将反转链表的数据指向原来链表的head
+        revert_head = HeroNode(0, "")
+        current_node = self.head.next
+        while True:
+            if current_node is None:
+                break
+
+            next_node = current_node.next
+            current_node.next = revert_head.next
+            revert_head.next = current_node
+            current_node = next_node
+
+        self.head.next = revert_head.next
+
+```
+
 
 
 ##### 8.将单链表反向打印，不破坏原有结构 (腾讯面试题)
@@ -1146,6 +1318,41 @@ public static class HeroNode {
 
 
 ###### Python
+
+```python
+
+    def revert_print(self):
+        '''
+        将单链表反向打印，不破坏原有结构 (腾讯面试题)
+        压栈方式
+        :return:
+        '''
+        stack = []
+        temp = self.head.next
+
+        while temp is not None:
+            stack.append(temp)
+            temp = temp.next
+
+        while len(stack) != 0:
+            print(stack.pop())
+
+    @staticmethod
+    def revert_print_with_recursion(temp):
+        '''
+        将单链表反向打印，不破坏原有结构 (腾讯面试题)
+        递归方式
+        :param temp:
+        :return:
+        '''
+        if temp is None:
+            return
+
+        LinkedList.revert_print_with_recursion(temp.next)
+        if temp.no != 0:
+            print(temp)
+
+```
 
 
 
@@ -1191,4 +1398,301 @@ public static class HeroNode {
 
 
 ###### Python
+
+```python
+
+    @staticmethod
+    def merge(*lists):
+        '''
+        合并多个链表，合并之后的链表有序 (百度面试题)
+        :param nodes:
+        :return:
+        '''
+
+        result = LinkedList()
+        for _list in lists:
+            temp = _list.head.next
+
+            while temp is not None:
+                result.add_by_order(HeroNode(temp.no, temp.name))
+                temp = temp.next
+
+        return result
+```
+
+
+
+#### 双链表和双链表节点的定义
+
+> 相对于单链表，双链表在数据结构上多了个pre指针
+>
+> 单链表只能按照一个方向查找，而双链表可以双向查找
+
+##### Java
+
+```Java
+  public static class HeroNode {
+        private int no;
+        private String name;
+        private HeroNode next;
+        private HeroNode pre;
+  }
+
+  public static class DoubleLinkedList {
+        private HeroNode head = new HeroNode(0, "");
+  }
+```
+
+
+
+##### Python
+
+```python
+```
+
+
+
+#### 双链表相关操作
+
+##### 1. 获取列表
+
+###### 思路
+
+1. 遍历节点
+2. 到了最后一个节点再向前遍历
+3. 当 当前节点的上一个节点是头结点时，停止遍历
+
+###### Java
+
+```java
+public void list() {
+            System.out.println("----------------向后遍历-----------------");
+            HeroNode current = head.getNext();
+            while (current != null) {
+                System.out.println(current);
+                if (current.getNext() == null) {
+                    break;
+                } else {
+                    current = current.getNext();
+                }
+            }
+            System.out.println("----------------向后遍历-----------------");
+            System.out.println("-----------------向前遍历----------------");
+            while (current != null) {
+                System.out.println(current);
+                if (current.getPre().getNo() == 0) {
+                    break;
+                } else {
+                    current = current.getPre();
+                }
+            }
+            System.out.println("------------------向前遍历---------------");
+        }
+```
+
+
+
+###### Python
+
+```python
+```
+
+
+
+
+
+
+
+##### 2.向链表尾部插入节点
+
+###### 思路
+
+1. 找到最后一个节点current，将元素插入到该节点后面
+
+2. current.next = node
+
+   node.pre = current
+
+###### Java
+
+```java
+
+        public void add(HeroNode node) {
+            /**
+             * 1. 查找到最后一个节点current
+             * 2. current.next = node node.pre=current
+             */
+            HeroNode current = head;
+
+            while (true) {
+                if (current.getNo() == node.getNo()) {
+                    throw new RuntimeException("存在一样的no");
+                }
+
+                if (current.getNext() == null) {
+                    current.setNext(node);
+                    node.setPre(current);
+                    break;
+                }
+                current = current.getNext();
+            }
+        }
+```
+
+
+
+###### Python
+
+```python
+
+```
+
+
+
+
+
+
+
+##### 3.按照编号大小向链表中插入节点
+
+###### 思路
+
+1. 节点no一样，报错冲突
+
+2. 找到比当前节点的下一个节点更大的节点，current.next.no>node.no 或者找到current.next = null
+3. current.next.pre = node
+	 node.next = current.next
+	 node.pre = current
+	 current.next = node
+
+###### Java
+
+```java
+
+        public void addByOrder(HeroNode node) {
+            /**
+             * 节点no一样，报错冲突
+             * 找到比当前节点的下一个节点更大的节点，current.next.no>node.no
+             * current.next.pre = node
+             * node.next = current.next
+             * node.pre = current
+             * current.next = node
+             *
+             */
+            HeroNode current = head;
+            while (true) {
+                if (current.getNext() == null
+                        || current.getNext().getNo() > node.getNo()) {
+                    break;
+                }
+                if (current.getNext().getNo() == node.getNo()) {
+                    throw new RuntimeException("Conflict no");
+                }
+
+                current = current.getNext();
+            }
+            if (current.getNext() != null) {
+                current.getNext().setPre(node);
+            }
+            node.setNext(current.getNext());
+            current.setNext(node);
+            node.setPre(current);
+        }
+
+```
+
+
+
+###### Python
+
+```python
+
+```
+
+
+
+
+
+
+
+##### 4. 删除节点
+
+###### 思路
+
+1. 遍历节点
+2. 如果当前节点current的no与传入的no相同
+3. 则 current.pre.next = current.next
+4. 	 current.next.pre = current.pre
+
+
+###### Java
+
+```java
+
+        public void delete(int no) {
+            /**
+             * 遍历节点
+             * 如果当前节点current的no与传入的no相同
+             * 则 current.pre.next = current.next
+             *   current.next.pre = current.pre
+             */
+
+            HeroNode current = head.getNext();
+            while (current != null) {
+                if (current.getNo() == no) {
+                    current.getPre().setNext(current.getNext());
+                    if (current.getNext() != null) {
+                        current.getNext().setPre(current.getPre());
+                    }
+                }
+                current = current.getNext();
+            }
+        }
+```
+
+
+
+###### Python
+
+```python
+
+```
+
+
+
+
+
+
+
+##### 5.修改节点
+
+###### 思路
+
+找到对应的节点直接修改
+
+###### Java
+
+```java
+        public void update(int no, String name) {
+            HeroNode current = head.getNext();
+            while (current != null) {
+                if (current.getNo() == no) {
+                    current.setName(name);
+                }
+                current = current.getNext();
+            }
+        }
+```
+
+
+
+###### Python
+
+```python
+
+```
+
+
+
+
 
