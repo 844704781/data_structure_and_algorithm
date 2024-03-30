@@ -1,39 +1,75 @@
 package com.watermelon.data_structure;
 
+import java.util.Stack;
+
 public class Demo {
 
-    public static String findMaxNum(int[] A, int n) {
-        // 找到第一个比n小的数字在数组A中的位置
-        int i = 0;
-        while (A[i] < n) {
-            i++;
-        }
-
-        // 从第i位开始，从大到小枚举数字
-        for (int j = i; j < A.length; j++) {
-            if (A[j] < n) {
-                A[i] = A[j];
-                break;
-            }
-        }
-
-        // 将第i位之后的数字全部替换为9
-        for (int j = i + 1; j < A.length; j++) {
-            if (A[j] < 9) {
-                A[j] = 9;
-            }
-        }
-
-        StringBuilder sb = new StringBuilder();
-        for (int num : A) {
-            sb.append(num);
-        }
-        return sb.toString();
-    }
-
     public static void main(String[] args) {
-        int[] A = {1, 2, 4, 9};
-        int n = 2533;
-        System.out.println(findMaxNum(A, n));
+        String expression = "1+2*3-8/2+6";
+        double result = calculate(expression);
+        System.out.println("Result: " + result);
     }
+
+    public static double calculate(String expression) {
+        Stack<Double> numbersStack = new Stack<>();
+        Stack<Character> operatorsStack = new Stack<>();
+
+        int i = 0;
+        while (i < expression.length()) {
+            if (Character.isDigit(expression.charAt(i))) {
+                StringBuilder numBuilder = new StringBuilder();
+                while (i < expression.length() && Character.isDigit(expression.charAt(i))) {
+                    numBuilder.append(expression.charAt(i));
+                    i++;
+                }
+                double num = Double.parseDouble(numBuilder.toString());
+                numbersStack.push(num);
+            } else if (expression.charAt(i) == '+' || expression.charAt(i) == '-' || expression.charAt(i) == '*' || expression.charAt(i) == '/') {
+                while (!operatorsStack.empty() && precedence(operatorsStack.peek()) >= precedence(expression.charAt(i))) {
+                    applyOperator(operatorsStack.pop(), numbersStack);
+                }
+                operatorsStack.push(expression.charAt(i));
+                i++;
+            } else {
+                i++;
+            }
+        }
+
+        while (!operatorsStack.empty()) {
+            applyOperator(operatorsStack.pop(), numbersStack);
+        }
+
+        return numbersStack.pop();
+    }
+
+    private static int precedence(char operator) {
+        if (operator == '+' || operator == '-') {
+            return 1;
+        } else if (operator == '*' || operator == '/') {
+            return 2;
+        } else {
+            return 0;
+        }
+    }
+
+    private static void applyOperator(char operator, Stack<Double> numbersStack) {
+        double operand2 = numbersStack.pop();
+        double operand1 = numbersStack.pop();
+        switch(operator) {
+            case '+':
+                numbersStack.push(operand1 + operand2);
+                break;
+            case '-':
+                numbersStack.push(operand1 - operand2);
+                break;
+            case '*':
+                numbersStack.push(operand1 * operand2);
+                break;
+            case '/':
+                numbersStack.push(operand1 / operand2);
+                break;
+        }
+    }
+
+
 }

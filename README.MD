@@ -1,5 +1,7 @@
 # 数据结构
 
+[TOC]
+
 
 
 ## 线性结构和非线性结构简介
@@ -1693,6 +1695,475 @@ public void list() {
 ```
 
 
+
+#### 约瑟夫问题
+
+Josephu问题为：设编号为 1，2，… n 的 n 个人围坐一圈，约定编号为 k（1<=k<=n）的人从 1 开始报数，数到m 的那个人出列，它的下一位又从 1 开始报数，数到 m 的那个人又出列，依次类推，直到所有人出列为止，由此产生一个出队编号的序列。
+
+
+
+##### 思路
+
+用一个不带头结点的循环链表来处理 Josephu 问题：先构成一个有 n 个结点的单循环链表，然后由 k 结点起从 1 开始计数，计到 m 时，对应结点从链表中删除，然后再从被删除结点的下一个结点又从 1 开始计数，直到最后一个结点从链表中删除算法结束。
+
+
+
+##### 代码
+
+###### Java
+
+```java
+package com.watermelon.data_structure;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+public class A06Josepfu {
+
+    public static void main(String[] args) {
+        List<Boy> boys = CircleLinkedList.buildJosepfu(5, 1, 2);
+        System.out.println(Arrays.toString(boys.toArray()));
+    }
+
+    public static class CircleLinkedList {
+        private Boy head = null;
+
+        private int length;
+
+        public Boy getHead() {
+            return head;
+        }
+
+        /**
+         * 构建环形链表
+         *
+         * @param boys
+         */
+        private void buildCircle(List<Boy> boys) {
+            this.length = boys.size();
+            for (int i = 0; i < boys.size(); i++) {
+                Boy boy = boys.get(i);
+                if (head == null) {
+                    head = boy;
+                } else {
+                    Boy temp = head;
+                    //找到结尾位置
+                    while (temp.getNext() != null) {
+                        temp = temp.getNext();
+                    }
+                    temp.setNext(boy);
+                }
+
+                if (i == boys.size() - 1) {
+                    boy.setNext(head);
+                }
+            }
+        }
+
+        public void show() {
+            Boy temp = head;
+            for (int i = 0; i < length; i++) {
+                System.out.println(temp);
+                temp = temp.getNext();
+            }
+        }
+
+        /**
+         * 删除
+         *
+         * @param boy
+         */
+        private void remove(Boy boy) {
+            Boy temp = head;
+            while (temp != null) {
+                if (temp.getNext().getNo() == boy.getNo()) {
+                    temp.setNext(temp.getNext().getNext());
+                    length = length - 1;
+                    break;
+                }
+                temp = temp.getNext();
+            }
+        }
+
+        public int getLength() {
+            return this.length;
+        }
+
+        /**
+         * 约瑟夫问题
+         *
+         * @param n 节点个数
+         * @param k 从第几个节点开始报数
+         * @param m 间隔
+         * @return
+         */
+        public static List<Boy> buildJosepfu(int n, int k, int m) {
+            List<Boy> result = new ArrayList<>();
+
+            List<Boy> boys = IntStream.range(1, n + 1)
+                    .boxed()
+                    .map(Boy::new)
+                    .collect(Collectors.toList());
+
+            CircleLinkedList list = new CircleLinkedList();
+            list.buildCircle(boys);
+            list.show();
+            /**
+             * 思路:
+             * 1. 遍历环形链表
+             * 2. 从第k次开始，每间隔m次，将链表中的元素删除，并将链表的数据放到结果列表中。
+             */
+            Boy temp = list.getHead();
+            int i = 1;//大循环，从第k次
+            int j = 1;//小循环，循环m次
+            while (true) {
+                if (i++ < k) {
+                    continue;
+                }
+                if (list.getLength() == 0) {
+                    //结束条件:链表中没有数据
+                    break;
+                }
+
+
+                if (j % m == 0) {
+                    Boy next = temp.getNext();
+                    list.remove(temp);
+                    result.add(new Boy(temp.getNo()));
+                    temp = next;
+                    j = 1;
+                } else {
+                    j++;
+                    temp = temp.getNext();
+                }
+            }
+            return result;
+        }
+    }
+
+    public static class Boy {
+        private int no;
+        private Boy next;
+
+        public Boy(int no) {
+            this.no = no;
+        }
+
+        public int getNo() {
+            return no;
+        }
+
+        public void setNo(int no) {
+            this.no = no;
+        }
+
+        public Boy getNext() {
+            return next;
+        }
+
+        public void setNext(Boy next) {
+            this.next = next;
+        }
+
+        @Override
+        public String toString() {
+            return "Boy{" +
+                    "no=" + no +
+                    '}';
+        }
+    }
+}
+```
+
+
+
+###### Python
+
+```python
+```
+
+
+
+### 栈
+
+1. 栈的英文为(stack)
+
+2. 栈是一个先入后出的有序列表。
+
+3. 栈是限制线性表中元素的插入和删除只能在线性表的同一端进行的一种特殊线性表。允许插入和删除的一端，为变化的一端，称为栈顶，另一端为固定的一端，称为栈底。
+
+4. 根据栈的定义可知，最先放入栈中元素在栈底，最后放入的元素在栈顶，而删除元素刚好相反，最后放入的元素最先删除，最先放入的元素最后删除
+
+
+
+#### 栈的相关操作
+
+##### 使用数组实现栈
+
+###### Java
+
+```java
+    public static class StackArray {
+        /**
+         * 栈顶
+         */
+        private int top;
+
+        /**
+         * 模拟栈的数组
+         */
+        private String[] array;
+
+        public StackArray(int size) {
+            this.top = -1;
+            array = new String[size];
+        }
+
+        /**
+         * 入栈
+         * array[++top] = meta
+         *
+         * @param meta
+         */
+        public void push(String meta) {
+            if (top == array.length - 1) {
+                throw new RuntimeException("超出最大长度");
+            }
+            array[++top] = meta;
+        }
+
+        /**
+         * 出栈
+         * array[top--]
+         */
+        public String pop() {
+            if (top == -1) {
+                throw new RuntimeException("stack为空");
+            }
+            String result = array[top];
+            array[top] = null;
+            top--;
+
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            return "StackArray{" +
+                    "top=" + top +
+                    ", array=" + Arrays.toString(array) +
+                    '}';
+        }
+    }
+```
+
+
+
+###### Python
+
+```python
+```
+
+
+
+
+
+##### 使用链表实现栈
+
+###### Java
+
+```java
+
+    public static class StackLinked {
+        private int top;//栈顶指针
+        private int size;//栈容量
+        private DoubleLinkedList list;//存放数据的链表
+
+        public StackLinked(int size) {
+            this.size = size;
+            this.top = -1;
+            list = new DoubleLinkedList();
+        }
+
+        public void push(String data) {
+            if (top == size - 1) {
+                throw new RuntimeException("超出最大限制");
+            }
+            list.add(new DoubleLinkedNode(data));
+            top = top + 1;
+        }
+
+
+        public DoubleLinkedNode pop() {
+            if (top == -1) {
+                throw new RuntimeException("栈已经空了");
+            }
+            DoubleLinkedNode node = list.getLast();
+            list.remove(node);
+            top = top - 1;
+            return node;
+        }
+
+        public void show() {
+            list.show();
+        }
+
+
+        public class DoubleLinkedList {
+            private DoubleLinkedNode head;
+
+            /**
+             * @param meta
+             */
+            public void add(DoubleLinkedNode meta) {
+                if (head == null) {
+                    head = meta;
+                } else {
+                    /**
+                     * 遍历到链表的最后一个节点，将新数据加入
+                     */
+                    DoubleLinkedNode temp = head;
+                    while (true) {
+                        if (temp.getNext() == null) {
+                            break;
+                        }
+                        temp = temp.getNext();
+                    }
+                    temp.setNext(meta);
+                    meta.setPre(temp);
+                }
+            }
+
+            /**
+             * @param meta
+             * @return
+             */
+            public DoubleLinkedNode remove(DoubleLinkedNode meta) {
+                if (head == null) {
+                    return null;
+                }
+                /**
+                 * 遍历链表，找到这个节点
+                 */
+
+                DoubleLinkedNode temp = head;
+
+                while (temp != null) {
+                    if (temp == meta) {
+                        if (temp.getPre() != null) {
+                            temp.getPre().setNext(temp.getNext());
+                        } else {
+                            head = null;
+                            return null;
+                        }
+
+
+                        if (temp.getNext() != null) {
+                            temp.getNext().setPre(temp.getPre());
+                        }
+                        return temp;
+                    }
+                    temp = temp.getNext();
+                }
+                return null;
+            }
+
+            public DoubleLinkedNode getLast() {
+                DoubleLinkedNode temp = head;
+
+                while (true) {
+                    if (temp.getNext() == null) {
+                        return temp;
+                    }
+                    temp = temp.getNext();
+                }
+            }
+
+            public void show() {
+                if(head == null){
+                    System.out.println("链表为空");
+                    return;
+                }
+                DoubleLinkedNode temp = head;
+
+                while (true) {
+                    System.out.println(temp);
+                    if (temp.getNext() == null) {
+                        break;
+                    }
+                    temp = temp.getNext();
+                }
+            }
+        }
+
+        public class DoubleLinkedNode {
+            private String data;
+            private DoubleLinkedNode next;
+            private DoubleLinkedNode pre;
+
+            public DoubleLinkedNode(String data) {
+                this.data = data;
+            }
+
+            public String getData() {
+                return data;
+            }
+
+            public void setData(String data) {
+                this.data = data;
+            }
+
+            public DoubleLinkedNode getNext() {
+                return next;
+            }
+
+            public void setNext(DoubleLinkedNode next) {
+                this.next = next;
+            }
+
+            public DoubleLinkedNode getPre() {
+                return pre;
+            }
+
+            public void setPre(DoubleLinkedNode pre) {
+                this.pre = pre;
+            }
+
+            @Override
+            public String toString() {
+                return "DoubleLinkedNode{" +
+                        "data='" + data + '\'' +
+                        '}';
+            }
+
+            @Override
+            public boolean equals(Object o) {
+                if (this == o) return true;
+                if (o == null || getClass() != o.getClass()) return false;
+                DoubleLinkedNode that = (DoubleLinkedNode) o;
+                return Objects.equals(data, that.data) && Objects.equals(next, that.next) && Objects.equals(pre, that.pre);
+            }
+
+            @Override
+            public int hashCode() {
+                return Objects.hash(data, next, pre);
+            }
+        }
+
+
+    }
+
+```
+
+
+
+###### Python
+
+```python
+```
 
 
 
