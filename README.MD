@@ -1906,56 +1906,50 @@ public class A06Josepfu {
 ###### Java
 
 ```java
-    public static class StackArray {
+public static class IStack<T> {
         /**
-         * 栈顶
+         * 用数组模拟实现Stack
          */
-        private int top;
+        private int top = -1;
+        private Object[] array;
 
-        /**
-         * 模拟栈的数组
-         */
-        private String[] array;
 
-        public StackArray(int size) {
-            this.top = -1;
-            array = new String[size];
+        public IStack() {
+            this(10);
         }
 
-        /**
-         * 入栈
-         * array[++top] = meta
-         *
-         * @param meta
-         */
-        public void push(String meta) {
+        public IStack(Integer size) {
+            array = new Object[size];
+        }
+
+        public T push(T item) {
             if (top == array.length - 1) {
-                throw new RuntimeException("超出最大长度");
+                array = Arrays.copyOf(array, array.length * 2);
             }
-            array[++top] = meta;
+            array[++top] = item;
+            return item;
         }
 
-        /**
-         * 出栈
-         * array[top--]
-         */
-        public String pop() {
+        public T pop() {
             if (top == -1) {
-                throw new RuntimeException("stack为空");
+                throw new RuntimeException("Empty stack");
             }
-            String result = array[top];
-            array[top] = null;
-            top--;
-
-            return result;
+            T item = (T) array[top--];
+            return item;
         }
 
-        @Override
-        public String toString() {
-            return "StackArray{" +
-                    "top=" + top +
-                    ", array=" + Arrays.toString(array) +
-                    '}';
+        public boolean isEmpty() {
+            return top == -1;
+        }
+
+        public int size() {
+            return top + 1;
+        }
+
+        public void show() {
+            for (int i = 0; i < top + 1; i++) {
+                System.out.println(array[i]);
+            }
         }
     }
 ```
@@ -2164,6 +2158,311 @@ public class A06Josepfu {
 
 ```python
 ```
+
+
+
+##### 实现不带括号的计算器
+
+###### 思想
+
+1. 创建两个栈：一个存放数字，一个存放运算符。
+
+2. 逐个遍历字符串中的字符：
+
+   - 如果当前字符是数字，则继续向后扫描，主要处理多位数的情况。
+
+     - 如果后面的字符是操作符，则将当前数字入数栈，并将遍历索引回到之前的位置。
+     - 否则，将后续的数字字符拼接到当前数字中。
+
+   - 如果当前字符是运算符：
+
+     - 如果符号栈为空，则直接将该运算符入符号栈。
+
+     - 否则
+
+       ​	如果该运算符优先级是 + 或 -：
+
+       ​		循环将数栈的数据进行计算，直至数栈中只剩一个结果，然后将当前符号入符号栈。
+
+       ​	如果该运算符优先级是 * 或 /，则直接将该运算符入符号栈。
+
+3. 完成遍历后：
+
+   - 循环遍历数栈：
+     - 如果数栈中仍有多于一个元素，则调用计算方法。
+
+4. 计算方法：
+
+   - 从数栈中取出两个数，从操作符栈中取出一个操作符，对这两个数按照该操作符进行运算。
+
+
+
+###### Java
+
+```java
+package com.watermelon.data_structure;
+
+import java.util.Arrays;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+/**
+ * 计算器，可计算大于10的
+ */
+public class A09SuperCalculator {
+    public static void main(String[] args) {
+        Calculator calculator = new Calculator();
+        long result = calculator.run("11+12*3-8/2+6+9/3+37-2+3-1+4/2+9-21+3+6/2+1");
+        System.out.println(result); //86
+
+    }
+
+    public static class Calculator {
+
+        private IStack<Long> numStack = new IStack<>();
+        private IStack<Character> opStack = new IStack<>();
+
+        /**
+         * 运行计算
+         *
+         * @param s
+         * @return
+         */
+        public long run(String s) {
+            /**
+             * 创建两个栈，一个是数栈，一个是符号栈
+             * 逐个遍历字符串中的字符
+             * 如果当前是数字，则要向后继续扫描(该行为主要用于处理数字大于一位数的情况)
+             *  如果后面的数是操作符，则直接入数栈,遍历的索引回到刚刚的位置
+             *  否则后面的数是数字，则拼接这个字符
+             *
+             * 否则如果是运算符
+             *    如果符号栈为空，直接压入符号栈中
+             *    否则，如果符号优先级是+和-
+             *              循环将数栈的数据，调用计算方法，将结算结果压入栈，直至数栈中只有一个结果时结束
+             *              结束后，再将当前符号压入符号栈
+             *         如果符号优先级是*和/, 直接压入符号栈中
+             *
+             * 遍历完后
+             * 循环遍历数栈
+             *  如果数栈的长度大于1
+             *    则调用计算方法
+             *
+             *
+             * 计算方法:
+             * 从数栈中取出两个数，再从操作符栈取出一个操作符，将后取出的数去和前取出的数按照运算符运算
+             */
+
+            char[] strs = s.toCharArray();
+            for (int i = 0; i < strs.length; i++) {
+                char c = strs[i];
+                if (isOp(c)) {
+                    if (opStack.isEmpty()) {
+                        opStack.push(c);
+                    } else {
+                        if (isLowerOp(c)) {
+                            while (numStack.size() > 1) {
+                                long firstNum = numStack.pop();
+                                long lastNum = numStack.pop();
+                                Character op = opStack.pop();
+
+                                long result = calc(firstNum, lastNum, op);
+                                numStack.push(result);
+                            }
+                        }
+                        opStack.push(c);
+                    }
+                } else if (isNumber(c)) {
+
+                    StringBuilder number = new StringBuilder().append(c);
+                    while (true) {
+                        if (i + 1 > strs.length - 1) {
+                            //已经扫描到结尾
+                            break;
+                        }
+                        char next = strs[++i];
+                        if (isOp(next)) {
+                            // next
+                            i--;
+                            break;
+                        } else if (isNumber(next)) {
+                            number.append(next);
+                        } else {
+                            throw new RuntimeException("无效的字符");
+                        }
+                    }
+                    Long meta = Long.valueOf(number.toString());
+                    numStack.push(meta);
+                } else {
+                    throw new RuntimeException("无效的字符");
+                }
+            }
+
+            while (numStack.size() > 1) {
+                long firstNum = numStack.pop();
+                long lastNum = numStack.pop();
+                Character op = opStack.pop();
+
+                long result = calc(firstNum, lastNum, op);
+                numStack.push(result);
+            }
+            return numStack.pop();
+        }
+
+        /**
+         * 计算方法
+         * 从数栈中取出两个数，再从操作符栈取出一个操作符，将后取出的数去和前取出的数按照运算符运算,返回运算结果
+         *
+         * @return
+         */
+        private long calc(long firstNum, long lastNum, char op) {
+
+            if (op == '+') {
+                return lastNum + firstNum;
+            } else if (op == '-') {
+                return lastNum - firstNum;
+            } else if (op == '*') {
+                return lastNum * firstNum;
+            } else {
+                return lastNum / firstNum;
+            }
+        }
+
+        /**
+         * 判断是否是+ -
+         *
+         * @param c
+         * @return
+         */
+        private boolean isLowerOp(char c) {
+            return Arrays.asList('+', '-').contains(c);
+        }
+
+        /**
+         * 判断是否是数字
+         *
+         * @param c
+         * @return
+         */
+        public static boolean isNumber(char c) {
+            Integer num = Integer.valueOf(String.valueOf(c));
+            return IntStream.range(0, 10)
+                    .boxed()
+                    .collect(Collectors.toList())
+                    .contains(num);
+        }
+
+        /**
+         * 是否是+ - * /
+         *
+         * @param c
+         * @return
+         */
+        private boolean isOp(char c) {
+            return Arrays.asList('+', '-', '*', '/').contains(c);
+        }
+    }
+
+    public static class IStack<T> {
+        /**
+         * 用数组模拟实现Stack
+         */
+        private int top = -1;
+        private Object[] array;
+
+
+        public IStack() {
+            this(10);
+        }
+
+        public IStack(Integer size) {
+            array = new Object[size];
+        }
+
+        public T push(T item) {
+            if (top == array.length - 1) {
+                array = Arrays.copyOf(array, array.length * 2);
+            }
+            array[++top] = item;
+            return item;
+        }
+
+        public T pop() {
+            if (top == -1) {
+                throw new RuntimeException("Empty stack");
+            }
+            T item = (T) array[top--];
+            return item;
+        }
+
+        public boolean isEmpty() {
+            return top == -1;
+        }
+
+        public int size() {
+            return top + 1;
+        }
+
+        public void show() {
+            for (int i = 0; i < top + 1; i++) {
+                System.out.println(array[i]);
+            }
+        }
+    }
+}
+```
+
+
+
+###### Python
+
+
+
+### 前缀表达式、中缀表达式、后缀表达式
+
+#### 前缀表达式
+
+##### 定义
+
+前缀表达式又称为波兰式，前缀表达式的运算符位于操作数之前
+
+举例说明：(3+4)\*5-6对应的前缀表达式为-*+3456
+
+
+
+#### 中缀表达式
+
+##### 定义
+
+中缀表达式是最常见的运算表达式，如(3+4)\*5-6
+
+中缀表达式求值是我们最熟悉的，但是对于计算机来说却不好操作。因此，在计算结果时，往往会将中缀表达式转成其它表达式来操作，一般转换为后缀表达式
+
+
+
+#### 后缀表达式
+
+##### 定义
+
+后缀表达式又称为逆波兰表达式，与前缀表达式相似，只是运算符位于操作数之后
+
+举例说明: (3+4)\*5-6对应的后缀表达式为34+5*6-
+
+| 中缀表达式 | 后缀表达式 |
+| ---------- | ---------- |
+| a+b        | ab+        |
+| a+(b-c)    | abc-+      |
+| a+(b-c)*d  | abc-d*+    |
+| a+d*(b-c)  | adbc-*+    |
+| a=1+3      | a13+=      |
+
+
+
+##### 后缀表达式计算机求值
+
+
+
+
 
 
 
