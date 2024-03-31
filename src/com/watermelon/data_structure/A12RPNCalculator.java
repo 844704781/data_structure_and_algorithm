@@ -1,6 +1,7 @@
 package com.watermelon.data_structure;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Stack;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -8,13 +9,12 @@ import java.util.stream.IntStream;
 /**
  * 逆波兰计算器
  * 也成为rpn计算器
- *
- * version1: 直接输入逆波兰表达式，但是仅支持单位整数
+ * version3:直接输入逆波兰表达式，支持多位整数运算
  */
-public class A10RPNCalculator {
+public class A12RPNCalculator {
     public static void main(String[] args) {
         int result = new RPNCalculator()
-                .run("1236*+2/+");
+                .run("11 12 3 8 2 / - * + 6 + 9 3 / + 37 + 2 - 3 + 1 - 4 2 / + 9 + 21 - 3 + 6 2 / + 1 +");
         System.out.println(result); //86
     }
 
@@ -39,8 +39,8 @@ public class A10RPNCalculator {
              *  后取出的值按照操作符去操作前取出的值
              */
             Stack<String> stack = new Stack<>();
-            char[] strs = s.toCharArray();
-            for (char str : strs) {
+            List<String> strs = Arrays.asList(s.split(" "));
+            for (String str : strs) {
                 if (isOp(str)) {
                     String first = stack.pop();
                     String next = stack.pop();
@@ -64,17 +64,17 @@ public class A10RPNCalculator {
          * @param op
          * @return
          */
-        private String calc(String first, String next, char op) {
+        private String calc(String first, String next, String op) {
             int firstNumber = Integer.valueOf(first);
             int nextNumber = Integer.valueOf(next);
             int result;
-            if (op == '+') {
+            if (op.equals("+")) {
                 result = nextNumber + firstNumber;
-            } else if (op == '-') {
+            } else if (op.equals("-")) {
                 result = nextNumber - firstNumber;
-            } else if (op == '*') {
+            } else if (op.equals("*")) {
                 result = nextNumber * firstNumber;
-            } else if (op == '/') {
+            } else if (op.equals("/")) {
                 result = nextNumber / firstNumber;
             } else {
                 throw new RuntimeException("无效的字符");
@@ -82,13 +82,18 @@ public class A10RPNCalculator {
             return String.valueOf(result);
         }
 
-        private boolean isOp(char str) {
-            return Arrays.asList('+', '-', '*', '/').contains(str);
+        private boolean isOp(String str) {
+            return Arrays.asList("+", "-", "*", "/").contains(str);
         }
 
-        private boolean isNumber(char str) {
-            int target = Integer.valueOf(String.valueOf(str));
-            return IntStream.range(0, 10).boxed().collect(Collectors.toList()).contains(target);
+
+        private boolean isNumber(String str) {
+            try {
+                Integer.valueOf(str);
+                return true;
+            } catch (Exception e) {
+                return false;
+            }
         }
     }
 

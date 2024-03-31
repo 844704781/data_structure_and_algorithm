@@ -7,6 +7,7 @@ import java.util.Stack;
 /**
  * 逆波兰计算器
  * 也成为rpn计算器
+ * version2:支持计算器形式输入，支持多位整数
  */
 public class A11RPNCalculator {
     public static void main(String[] args) {

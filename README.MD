@@ -2460,6 +2460,506 @@ public class A09SuperCalculator {
 
 ##### 后缀表达式计算机求值
 
+###### 思路
+
+1. 定义一个栈用于存储操作数和中间结果。
+2. 从左至右遍历表达式中的每个字符：
+   - 如果是数字，则将其压入栈中。
+   - 如果是操作符，则从栈顶取出两个值进行计算，然后将计算结果压入栈中。
+3. 遍历结束后，返回栈中最后一个元素，这个元素就是计算结果。
+4. 计算方法：
+   - 从栈中取出的后一个值按照操作符对先取出的值进行操作。
+
+###### Java
+
+```java
+package com.watermelon.data_structure;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Stack;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+/**
+ * 逆波兰计算器
+ * 也成为rpn计算器
+ * version3:直接输入逆波兰表达式，支持多位整数运算，每个符号空格隔开
+ */
+public class A12RPNCalculator {
+    public static void main(String[] args) {
+        int result = new RPNCalculator()
+                .run("31 4 + 5 * 6 -");
+        System.out.println(result); //86
+    }
+
+    public static class RPNCalculator {
+
+
+        /**
+         * 逆波兰表达式求值
+         *
+         * @param s 逆波兰表达式
+         * @return 计算结果
+         */
+        public int run(String s) {
+            /**
+             * 定义一个栈
+             * 从左至右遍历表达式
+             *  如果是数字，则压入栈中
+             *  如果是操作符，则从栈顶取出两个值，计算，将计算结果压入栈中
+             *
+             * 遍历结束，返回栈中最后一个元素，这个元素就是结果
+             * 计算:
+             *  后取出的值按照操作符去操作前取出的值
+             */
+            Stack<String> stack = new Stack<>();
+            List<String> strs = Arrays.asList(s.split(" "));
+            for (String str : strs) {
+                if (isOp(str)) {
+                    String first = stack.pop();
+                    String next = stack.pop();
+                    String result = calc(first, next, str);
+                    stack.push(result);
+                } else if (isNumber(str)) {
+                    stack.push(String.valueOf(str));
+                } else {
+                    throw new RuntimeException("无效的字符");
+                }
+
+            }
+            return Integer.valueOf(stack.pop());
+        }
+
+        /**
+         * 计算
+         *
+         * @param first
+         * @param next
+         * @param op
+         * @return
+         */
+        private String calc(String first, String next, String op) {
+            int firstNumber = Integer.valueOf(first);
+            int nextNumber = Integer.valueOf(next);
+            int result;
+            if (op.equals("+")) {
+                result = nextNumber + firstNumber;
+            } else if (op.equals("-")) {
+                result = nextNumber - firstNumber;
+            } else if (op.equals("*")) {
+                result = nextNumber * firstNumber;
+            } else if (op.equals("/")) {
+                result = nextNumber / firstNumber;
+            } else {
+                throw new RuntimeException("无效的字符");
+            }
+            return String.valueOf(result);
+        }
+
+        private boolean isOp(String str) {
+            return Arrays.asList("+", "-", "*", "/").contains(str);
+        }
+
+
+        private boolean isNumber(String str) {
+            try {
+                Integer.valueOf(str);
+                return true;
+            } catch (Exception e) {
+                return false;
+            }
+        }
+    }
+
+}
+```
+
+
+
+###### Python
+
+
+
+##### 中缀表达式转后缀表达式
+
+###### 思路
+
+1. 遇到左括号就压入符号栈，遇到右括号就把符号栈的符号弹出直到遇到左括号。
+2. 数字直接放入结果栈。
+3. 对于加减乘除，如果符号栈顶的优先级小于当前操作符，则直接压入符号栈；否则，将符号栈中优先级高于或等于当前操作符的符号弹出并放入结果栈，最后再将当前操作符压入符号栈。
+4. 最后得到的结果栈逆序即为后缀表达式。
+
+
+
+###### Java
+
+```java
+package com.watermelon.data_structure;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Stack;
+import java.util.regex.Pattern;
+
+/**
+ * 中缀表达式转后缀表达式
+ */
+public class A13InfixToPostfixConverter {
+    public static void main(String[] args) {
+        InfixToPostfixConverter converter = new InfixToPostfixConverter();
+        String infix = "11 + 12 * ( 3 - 8 / 2 ) + 6 + 9 / 3 + 37 - 2 + 3 - 1 + 4 / 2 + 9 - 21 + 3 + 6 / 2 + 1";
+        String postfix = converter.run(infix);
+        System.out.println("中缀为:" + infix);
+        System.out.println("后缀为:" + postfix);
+    }
+
+
+    /**
+     * 思路：
+     * 定义两个栈，一个用于存储符号，一个用于存储结果
+     * 从左到右遍历中缀表达式中的每一项
+     *   左括号，压入符号栈
+     *   右括号，将符号栈从栈顶开始取元素压入结果栈，直到遇到左括号
+     *   数字，压入结果栈
+     *   加减乘除，如果当前符号栈栈顶优先级小于自己，则直接压入符号栈
+     *           否则挨个将符号栈比自己大或等的符号转入结果栈
+     *              直到符号栈为空或者遇到左括号时，再将自己压入符号栈
+     * 得到的结果栈逆序就是后缀表达式
+     */
+    public static class InfixToPostfixConverter {
+
+        private Stack<String> opStack = new Stack<>();//存储操作符
+        private Stack<String> resultStack = new Stack<>();//存储结果
+
+        public String run(String infix) {
+            /**
+             * 定义两个栈，一个叫符号栈，用于存储符号，一个叫结果栈，用于存储临时结果
+             * 将中缀表达式按照空格分割，存储到list中
+             * 从左至右遍历list中的每一项
+             *  如果字符为数字
+             *     直接将数字压入存储结果栈中
+             *  如果字符为操作符
+             *     如果操作符栈为空，直接将字符压入符号栈中
+             *     否则
+             *       如果操作符是左括号，直接将操作符压入符号栈中
+             *       如果操作符是右括号，循环获取符号栈栈顶元素
+             *                          如果当前栈顶元素是非右括号，则直接将当前栈顶符号取出压入结果栈
+             *                          如果当前栈顶元素是右括号，则直接将当前元素取出丢弃
+             *       如果操作符是*或者/，如果当前符号优先级小于等于操作符栈顶符号，将操作符栈顶元素取出压入存储结果栈
+             *                        否则直接压入符号栈
+             *       如果操作符是+或者-, 如果当前符号优先级小于等于操作符栈顶符号
+             *                            循环获取符号栈栈顶元素符号，将栈顶符号优先级大于等于当前符号的符号压入结果栈中，直到遇到左括号为止
+             *                        否则直接压入符号栈
+             *
+             *       如果操作符是+ - * /，则循环获取符号栈的栈顶元素
+             *                        如果符号栈为空或者栈顶元素符号是左括号，则直接压入符号栈
+             *                        如果当前符号优先级小于等于栈顶元素的符号，那么将栈顶的元素取出压入存储结果栈
+             *                        如果当前符号优先级大于栈顶元素符号，则直接将当前符号压入符号栈
+             * 遍历完毕list后，将符号栈中剩余的元素都pop到结果栈中
+             **/
+            List<String> strs = Arrays.asList(infix.split(" "));
+            for (String str : strs) {
+                if (isNumber(str)) {
+                    resultStack.push(str);
+                } else if (isOp(str)) {
+                    if (opStack.isEmpty()) {
+                        opStack.push(str);
+                    } else {
+                        if ("(".equals(str)) {
+                            //处理左括号
+                            opStack.push(str);
+                        } else if (")".equals(str)) {
+                            //处理右括号
+                            String op = opStack.pop();
+                            while (!"(".equals(op)) {
+                                resultStack.push(op);
+                                op = opStack.pop();
+                            }
+                        } else {
+                            //处理+-*/
+                            while (true) {
+                                if (opStack.isEmpty() || opStack.peek().equals("(")) {
+                                    opStack.push(str);
+                                    break;
+                                } else {
+                                    String topOp = opStack.peek();
+                                    if (getOpLevel(str) <= getOpLevel(topOp)) {
+                                        topOp = opStack.pop();
+                                        resultStack.push(topOp);
+                                    } else {
+                                        opStack.push(str);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    throw new RuntimeException("无效字符");
+                }
+            }
+
+            while (!opStack.isEmpty()) {
+                resultStack.push(opStack.pop());
+            }
+
+            //将结果栈逆序输出
+            Stack<String> revertStack = new Stack<>();
+            while (!resultStack.isEmpty()) {
+                revertStack.push(resultStack.pop());
+            }
+            StringBuilder sbf = new StringBuilder();
+            while (!revertStack.isEmpty()) {
+                sbf.append(revertStack.pop()).append(" ");
+            }
+            return sbf.toString();
+        }
+
+        /**
+         * 获取操作符号的优先级
+         *
+         * @param op
+         * @return
+         */
+        private int getOpLevel(String op) {
+            if (Arrays.asList("+", "-").contains(op)) {
+                return 1;
+            } else if (Arrays.asList("*", "/").contains(op)) {
+                return 2;
+            } else if (Arrays.asList("(", ")").contains(op)) {
+                return 3;
+            } else {
+                throw new RuntimeException("无效操作符");
+            }
+        }
+
+        private boolean isOp(String str) {
+
+            return Arrays.asList("+", "-", "*", "/", "(", ")").contains(str);
+        }
+
+        private boolean isNumber(String str) {
+            return Pattern.matches("\\d+", str);
+        }
+    }
+
+}
+```
+
+
+
+###### Python
+
+```python
+```
+
+
+
+##### 后缀表达式实现带括号的计算器
+
+###### 思路
+
+1. 将中缀表达式转换成后缀表达式
+2. 使用后缀表达式计算结果
+
+###### Java
+
+```java
+package com.watermelon.data_structure;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Stack;
+import java.util.regex.Pattern;
+
+public class A14SuperCalculatorPlus {
+    public static void main(String[] args) {
+        Calculator calculator = new Calculator();
+        String infix = "11 + 12 * ( 3 - 8 ) / 2 + 6 + 9 / 3 + 37 - 2 + 3 - 1 + 4 / 2 + 9 - 21 + 3 + 6 / 2 + 1";
+        long result = calculator.run(infix);
+        System.out.println("中缀表达式为:" + infix);
+        System.out.println("结果:" + result); 
+    }
+
+    public static class Calculator {
+
+        public long run(String express) {
+            /**
+             * 1.中缀表达式转后缀表达式
+             * 2.根据后缀表达式计算结果
+             */
+            InfixToPostfixConverter converter = new InfixToPostfixConverter();
+            String postfix = converter.run(express);
+            RPNCalculator calculator = new RPNCalculator();
+            return calculator.run(postfix);
+        }
+    }
+
+    /**
+     * 逆波兰表达式求值
+     */
+    public static class RPNCalculator {
+
+
+        /**
+         * 逆波兰表达式求值
+         *
+         * @param s 逆波兰表达式
+         * @return 计算结果
+         */
+        public int run(String s) {
+            Stack<String> stack = new Stack<>();
+            List<String> strs = Arrays.asList(s.split(" "));
+            for (String str : strs) {
+                if (isOp(str)) {
+                    String first = stack.pop();
+                    String next = stack.pop();
+                    String result = calc(first, next, str);
+                    stack.push(result);
+                } else if (isNumber(str)) {
+                    stack.push(String.valueOf(str));
+                } else {
+                    throw new RuntimeException("无效的字符");
+                }
+
+            }
+            return Integer.valueOf(stack.pop());
+        }
+
+        /**
+         * 计算
+         *
+         * @param first
+         * @param next
+         * @param op
+         * @return
+         */
+        private String calc(String first, String next, String op) {
+            int firstNumber = Integer.valueOf(first);
+            int nextNumber = Integer.valueOf(next);
+            int result;
+            if (op.equals("+")) {
+                result = nextNumber + firstNumber;
+            } else if (op.equals("-")) {
+                result = nextNumber - firstNumber;
+            } else if (op.equals("*")) {
+                result = nextNumber * firstNumber;
+            } else if (op.equals("/")) {
+                result = nextNumber / firstNumber;
+            } else {
+                throw new RuntimeException("无效的字符");
+            }
+            return String.valueOf(result);
+        }
+    }
+
+    /**
+     * 中缀转后缀
+     */
+    public static class InfixToPostfixConverter {
+
+        private Stack<String> opStack = new Stack<>();//存储操作符
+        private Stack<String> resultStack = new Stack<>();//存储结果
+
+        public String run(String infix) {
+            List<String> strs = Arrays.asList(infix.split(" "));
+            for (String str : strs) {
+                if (isNumber(str)) {
+                    //处理数字
+                    resultStack.push(str);
+                } else if (isOp(str)) {
+                    if (opStack.isEmpty()) {
+                        opStack.push(str);
+                    } else {
+                        if ("(".equals(str)) {
+                            //处理左括号
+                            opStack.push(str);
+                        } else if (")".equals(str)) {
+                            //处理右括号
+                            String op = opStack.pop();
+                            while (!"(".equals(op)) {
+                                resultStack.push(op);
+                                op = opStack.pop();
+                            }
+                        } else {
+                            //处理+-*/
+                            while (true) {
+                                if (opStack.isEmpty() || opStack.peek().equals("(")) {
+                                    opStack.push(str);
+                                    break;
+                                } else {
+                                    String topOp = opStack.peek();
+                                    if (getOpLevel(str) <= getOpLevel(topOp)) {
+                                        topOp = opStack.pop();
+                                        resultStack.push(topOp);
+                                    } else {
+                                        opStack.push(str);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    throw new RuntimeException("无效字符");
+                }
+            }
+
+            while (!opStack.isEmpty()) {
+                resultStack.push(opStack.pop());
+            }
+
+            //将结果栈逆序输出
+            Stack<String> revertStack = new Stack<>();
+            while (!resultStack.isEmpty()) {
+                revertStack.push(resultStack.pop());
+            }
+            StringBuilder sbf = new StringBuilder();
+            while (!revertStack.isEmpty()) {
+                sbf.append(revertStack.pop()).append(" ");
+            }
+            return sbf.toString();
+        }
+
+    }
+
+
+    /**
+     * 获取操作符号的优先级
+     *
+     * @param op
+     * @return
+     */
+    private static int getOpLevel(String op) {
+        if (Arrays.asList("+", "-").contains(op)) {
+            return 1;
+        } else if (Arrays.asList("*", "/").contains(op)) {
+            return 2;
+        } else if (Arrays.asList("(", ")").contains(op)) {
+            return 3;
+        } else {
+            throw new RuntimeException("无效操作符");
+        }
+    }
+
+    private static boolean isOp(String str) {
+        return Arrays.asList("+", "-", "*", "/", "(", ")").contains(str);
+    }
+
+    private static boolean isNumber(String str) {
+        return Pattern.matches("\\d+", str);
+    }
+}
+```
+
+
+
+###### Python
+
+```python
+```
+
 
 
 
