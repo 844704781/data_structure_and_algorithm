@@ -1,6 +1,4 @@
-package com.watermelon.algorithm;
-
-import com.sun.xml.internal.ws.util.StringUtils;
+package com.watermelon.leetcode;
 
 import java.util.*;
 
@@ -10,6 +8,7 @@ import java.util.*;
  * 图片->就是九宫格键盘
  * 输入：digits = "23"
  * 输出：["ad","ae","af","bd","be","bf","cd","ce","cf"]
+ * 思路:利用回溯思想
  */
 public class LeetCode17Phone {
     public static void main1(String[] args) {
