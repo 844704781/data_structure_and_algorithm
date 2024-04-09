@@ -475,3 +475,603 @@
 
 ```
 
+
+
+# 哈希表
+
+## 使用数组加链表实现哈希表
+
+
+
+### Java
+
+```java
+public static void main(String[] args) {
+        IHashTable<String, String> table = new IHashTable<>(10);
+
+        Scanner sc = new Scanner(System.in);
+        while (true) {
+            System.out.println("功能:");
+            System.out.println("1. add");
+            System.out.println("2. show");
+            System.out.println("3. exit");
+            System.out.println("4. findById");
+            System.out.println("5. removeById");
+            String input = sc.next();
+            int id;
+            String key;
+            String value;
+            switch (input) {
+                case "1":
+                    System.out.println("请输入要输入的id:");
+                    id = sc.nextInt();
+                    System.out.println("请输入key:");
+                    key = sc.next();
+                    System.out.println("请输入value:");
+                    value = sc.next();
+                    table.put(id, key, value);
+                    break;
+                case "2":
+                    table.show();
+                    break;
+                case "3":
+                    sc.close();
+                    System.exit(0);
+                    break;
+                case "4":
+                    System.out.println("请输入要查找的id:");
+                    id = sc.nextInt();
+                    Node<String, String> entry = table.findById(id);
+                    System.out.println(entry);
+                    break;
+                case "5":
+                    System.out.println("请输入要删除的id:");
+                    id = sc.nextInt();
+                    table.removeById(id);
+                    break;
+                default:
+                    System.out.println("输入错误请重新输入");
+                    break;
+            }
+        }
+
+
+    }
+
+    private static String randomString(int size) {
+        StringBuilder sbd = new StringBuilder();
+
+        for (int j = 0; j < size; j++) {
+            int random = new Random().nextInt('z' - 'a' + 1) + 'a';
+            for (int i = 'a'; i <= 'z'; i++) {
+                if (random == i) {
+                    sbd.append((char) i);
+                }
+            }
+        }
+        return sbd.toString();
+    }
+
+
+    public static class IHashTable<K, V> {
+        private LinkedNode<K, V>[] tables;
+        private int size;
+
+        public IHashTable(int size) {
+            this.size = size;
+            tables = new LinkedNode[size];
+            for (int i = 0; i < tables.length; i++) {
+                tables[i] = new LinkedNode<>();
+            }
+        }
+
+        public void put(int id, K key, V value) {
+            int index = hash(id);
+            tables[index].add(new Node<K, V>(id, key, value));
+        }
+
+        public void show() {
+            for (int i = 0; i < tables.length; i++) {
+                LinkedNode<K, V> table = tables[i];
+                table.show(i);
+            }
+        }
+
+
+        private int hash(int id) {
+            return id % this.size;
+        }
+
+        public Node<K, V> findById(int id) {
+            int index = hash(id);
+            return tables[index].findById(id);
+        }
+
+        public void removeById(int id) {
+            int index = hash(id);
+            tables[index].removeById(id);
+        }
+    }
+
+    public static class LinkedNode<K, V> {
+        private Node<K, V> head;
+
+        /**
+         * 将节点加入链表结尾
+         *
+         * @param node
+         */
+        public void add(Node<K, V> node) {
+            if (head == null) {
+                head = node;
+                return;
+            }
+            Node<K, V> current = head;
+            while (true) {
+                if (current.getNext() == null) {
+                    break;
+                }
+                current = current.getNext();
+            }
+            current.setNext(node);
+        }
+
+        /**
+         * 展示当前链表的数据
+         *
+         * @param linkedNo
+         */
+        public void show(int linkedNo) {
+            System.out.printf("%d --> ", linkedNo);
+            Node<K, V> current = head;
+            while (current != null) {
+                System.out.printf("id:%s, key: %s,value: %s\t",
+                        current.getId(), current.getKey(), current.getValue());
+                current = current.getNext();
+            }
+            System.out.println();
+        }
+
+        public Node<K, V> findById(int id) {
+            Node<K, V> current = head;
+            while (current != null) {
+                if (current.getId() == id) {
+                    return current;
+                }
+                current = current.getNext();
+            }
+            return null;
+        }
+
+        public void removeById(int id) {
+            Node<K, V> current = head;
+            if (current.getId() == id) {
+                head = head.getNext();
+                System.out.println("删除成功");
+                return;
+            }
+            while (true) {
+                if (current.getNext() == null) {
+                    System.out.println("未找到");
+                    break;
+                }
+                if (current.getNext().getId() == id) {
+                    current.setNext(current.getNext().getNext());
+                    System.out.println("删除成功");
+                }
+                current = current.getNext();
+            }
+        }
+    }
+
+    /**
+     * 节点
+     *
+     * @param <K>
+     * @param <V>
+     */
+    public static class Node<K, V> {
+        private int id;
+        private K key;
+        private V value;
+        private Node next;
+
+        public Node() {
+        }
+
+        public Node(int id, K key, V value) {
+            this.id = id;
+            this.key = key;
+            this.value = value;
+        }
+
+        public void setNext(Node next) {
+            this.next = next;
+        }
+
+        public Node getNext() {
+            return next;
+        }
+
+        public int getId() {
+            return id;
+        }
+
+        public K getKey() {
+            return key;
+        }
+
+        public V getValue() {
+            return value;
+        }
+
+        @Override
+        public String toString() {
+            return "{" +
+                    "id=" + id +
+                    ",key=" + key +
+                    ", value=" + value +
+                    '}';
+        }
+    }
+```
+
+
+
+### Python
+
+```python
+```
+
+
+
+# 树
+
+## 为什么需要树这种数据结构
+
+### 数组存储方式的分析
+
+#### 优点
+
+通过下标方式访问元素，速度快
+
+对于有序数组，可以使用二分查找提高检索速度
+
+#### 缺点
+
+如果要插入或删除某个值会整体移动，效率较低
+
+
+
+### 链式存储方式的分析
+
+#### 优点
+
+插入和删除相对数组快，只需要重新连接指针即可
+
+#### 缺点
+
+检索效率低，访问指定位置的结点时需要遍历查找
+
+
+
+所以就出现了树这种数据结构
+
+
+
+### 树存储方式的分析
+
+提供数据 **存储** 、**读取** 效率。
+
+例如：利用 **二叉排序树（Binary Sort Tree）**，既可以保证数据的检索速度，同时也可以保证数据的**插入**、**删除**、**修改** 的速度
+
+![](./img/002.png)
+
+
+
+如图所示：
+
+- 插入时，小的数在 **左节点**、大的数在 **右节点**
+- 查找时：根据插入事的特性，基本上就类似折半查找了，每次都过滤一半的节点
+- 删除时：只需要移动相邻的节点的引用
+
+
+
+## 树的常用术语
+
+![](./img/003.png)
+
+- 节点：每一个圆圈表示一个节点，也称节点对象
+
+- 根节点：最上面，最顶部的那个节点，也就是一棵树的入口
+
+- 父节点：有子节点的节点
+
+- 子节点
+
+- 叶子节点：没有子节点的节点
+
+- 节点的权：可以简单的理解为节点值
+
+  有时候也用 **路径** 来表示
+
+- 路径：从 root 节点找到该节点的路线
+
+- 层
+
+- 子树：有子节点的父子两层就可以称为是一个子树
+
+- 树的高度：最大层数
+
+- 森林：多颗子树构成森林
+
+
+
+## 二叉树的遍历
+
+![](./img/004.png)
+
+
+
+### 前序遍历
+
+遍历顺序：根左右
+
+1,2,3,5,4
+
+
+
+### 中序遍历
+
+遍历顺序：左根右
+
+2,1,5,3,4
+
+### 后序遍历
+
+遍历顺序：左右根
+
+2,5,4,3,1
+
+
+
+### 代码
+
+#### Java
+
+```java
+package com.watermelon.tree;
+
+public class A01BinaryTree {
+
+    public static void main(String[] args) {
+        HeroNode root = new HeroNode(1, "张三");
+        HeroNode node2 = new HeroNode(2, "李四");
+        HeroNode node3 = new HeroNode(3, "王老五");
+        HeroNode node4 = new HeroNode(4, "朱重八");
+        HeroNode node5 = new HeroNode(5, "刘大力");
+        root.setLeft(node2);
+        root.setRight(node3);
+        node3.setLeft(node5);
+        node3.setRight(node4);
+
+        Binary binary = new Binary(root);
+        binary.preOrder();
+        binary.infixOrder();
+        binary.postOrder();
+    }
+}
+
+class Binary {
+    private HeroNode root;
+
+    public Binary(HeroNode root) {
+        this.root = root;
+    }
+
+    public void preOrder() {
+        if (this.root == null) {
+            System.out.println("根节点为空");
+            return;
+        }
+        System.out.println("前序遍历：");
+        this.root.preOrder();
+    }
+
+    public void infixOrder() {
+        if (this.root == null) {
+            System.out.println("根节点为空");
+            return;
+        }
+        System.out.println("中序遍历：");
+        System.out.println();
+        this.root.infixOrder();
+    }
+
+    public void postOrder() {
+        if (this.root == null) {
+            System.out.println("根节点为空");
+            return;
+        }
+        System.out.println("后序遍历：");
+        this.root.postOrder();
+    }
+}
+
+class HeroNode {
+    private int no;
+    private String name;
+    private HeroNode left;
+    private HeroNode right;
+
+    public HeroNode(int no, String name) {
+        this.no = no;
+        this.name = name;
+    }
+
+    public HeroNode getLeft() {
+        return left;
+    }
+
+    public void setLeft(HeroNode left) {
+        this.left = left;
+    }
+
+    public HeroNode getRight() {
+        return right;
+    }
+
+    public void setRight(HeroNode right) {
+        this.right = right;
+    }
+
+    @Override
+    public String toString() {
+        return "HeroNode{" +
+                "no=" + no +
+                ", name='" + name + '\'' +
+                '}';
+    }
+
+    /**
+     * 前序遍历
+     * 根左右
+     */
+    public void preOrder() {
+        System.out.println(this);
+        if (this.left != null) {
+            this.left.preOrder();
+        }
+        if (this.right != null) {
+            this.right.preOrder();
+        }
+    }
+
+    /**
+     * 中序遍历
+     * 左根右
+     */
+    public void infixOrder() {
+        if (this.left != null) {
+            this.left.infixOrder();
+        }
+        System.out.println(this);
+        if (this.right != null) {
+            this.right.infixOrder();
+        }
+    }
+
+    /**
+     * 后序遍历
+     * 左右根
+     */
+    public void postOrder() {
+        if (this.left != null) {
+            this.left.postOrder();
+        }
+        if (this.right != null) {
+            this.right.postOrder();
+        }
+        System.out.println(this);
+    }
+}
+```
+
+
+
+#### Python
+
+```python
+```
+
+
+
+## 二叉树的查找
+
+### Java
+
+```java
+        /**
+         * 前序查找
+         * 根左右
+         */
+        public HeroNode preSearch(int no) {
+            System.out.println("前序查找中:" + this.no);
+            HeroNode current = this;
+            if (current.no == no) {
+                return current;
+            }
+            if (this.left != null) {
+                current = this.left.preSearch(no);
+                if (current != null) {
+                    return current;
+                }
+            }
+            if (this.right != null) {
+                current = this.right.preSearch(no);
+                if (current != null) {
+                    return current;
+                }
+            }
+            return null;
+        }
+
+        /**
+         * 中序查找
+         * 左根右
+         */
+        public HeroNode infixSearch(int no) {
+
+            HeroNode current;
+            if (this.left != null) {
+                current = this.left.infixSearch(no);
+                if (current != null) {
+                    return current;
+                }
+            }
+            System.out.println("中序查找中:" + this.no);
+            if (this.no == no) {
+                return this;
+            }
+            if (this.right != null) {
+                current = this.right.infixSearch(no);
+                if (current != null) {
+                    return current;
+                }
+            }
+            return null;
+        }
+
+        /**
+         * 后序查找
+         * 左右根
+         */
+        public HeroNode postSearch(int no) {
+            HeroNode current;
+            if (this.left != null) {
+                current = this.left.postSearch(no);
+                if (current != null) {
+                    return current;
+                }
+            }
+            if (this.right != null) {
+                current = this.right.postSearch(no);
+                if (current != null) {
+                    return current;
+                }
+            }
+            System.out.println("后序查找中:" + this.no);
+            if (this.no == no) {
+                return this;
+            }
+            return null;
+        }
+```
+
+
+
+### Python
+
+```python
+```
+
