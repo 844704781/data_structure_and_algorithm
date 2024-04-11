@@ -1075,3 +1075,566 @@ class HeroNode {
 ```python
 ```
 
+
+
+
+
+## 二叉树节点的删除(不完整版)
+
+要求：
+
+1. 如果删除的节点是 **叶子节点**，则删除该节点
+2. 如果删除的节点是非叶子节点，则删除该子树
+
+### 思路
+
+- 由于我们的二叉树是单向的
+
+- 所以我们判定一个节点是否可以删除，是判断它的 **子节点**，是否可删除，否则则没法回到父节点删除了，因为要判断被删除的节点满足前面的两点要求
+
+  1. 当前节点的 **左子节点** 不为空，并且左子节点就是要删除的节点，则 left = null，并且返回（结束递归删除）
+  2. 当前节点的 **右子节点** 不为空，并且右子节点就是要删除的节点，则 right = null，并且返回（结束递归删除）
+
+  如果前面都没有删除，则继续递归删除。上面的要求是 2 点，实际上是，找到符合条件的节点则直接删除（因为不考虑是否有子树）
+
+  如果树只有一个 root 节点，则将 root 节点置空
+
+### 代码
+
+#### Java
+
+```java
+public class A03BinaryTreeDelete {
+
+    public static void main(String[] args) {
+        HeroNode root = new HeroNode(1, "张三");
+        HeroNode node2 = new HeroNode(2, "李四");
+        HeroNode node3 = new HeroNode(3, "王老五");
+        HeroNode node4 = new HeroNode(4, "朱重八");
+        HeroNode node5 = new HeroNode(5, "刘大力");
+        root.setLeft(node2);
+        root.setRight(node3);
+        node3.setLeft(node5);
+        node3.setRight(node4);
+
+        Binary binary = new Binary(root);
+        binary.preOrder();
+        System.out.println("----------删除后---------");
+        binary.delNode(3);
+        binary.preOrder();
+
+    }
+
+    public static class Binary {
+        private HeroNode root;
+
+        public Binary(HeroNode root) {
+            this.root = root;
+        }
+
+        public void delNode(int no) {
+            if (root == null) {
+                return;
+            }
+            if (root.no == no) {
+                root = null;
+                return;
+            }
+            root.delNode(no);
+        }
+
+        public void preOrder() {
+            if (root == null) {
+                return;
+            }
+            root.preOrder();
+        }
+    }
+
+    public static class HeroNode {
+        private int no;
+        private String name;
+        private HeroNode left;
+        private HeroNode right;
+
+        public HeroNode(int no, String name) {
+            this.no = no;
+            this.name = name;
+        }
+
+        public HeroNode getLeft() {
+            return left;
+        }
+
+        public void setLeft(HeroNode left) {
+            this.left = left;
+        }
+
+        public HeroNode getRight() {
+            return right;
+        }
+
+        public void setRight(HeroNode right) {
+            this.right = right;
+        }
+
+        @Override
+        public String toString() {
+            return "HeroNode{" +
+                    "no=" + no +
+                    ", name='" + name + '\'' +
+                    '}';
+        }
+
+
+        public boolean delNode(int no) {
+            if (this.left != null) {
+                if (this.left.no == no) {
+                    this.left = null;
+                    return true;
+                }
+            }
+            if (this.right != null) {
+                if (this.right.no == no) {
+                    this.right = null;
+                    return true;
+                }
+            }
+            if (this.left != null) {
+                if (this.left.delNode(no)) {
+                    return true;
+                }
+            }
+            if (this.right != null) {
+                if (this.right.delNode(no)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public void preOrder() {
+            System.out.println(this);
+            if (this.left != null) {
+                this.left.preOrder();
+            }
+            if (this.right != null) {
+                this.right.preOrder();
+            }
+        }
+    }
+}
+```
+
+
+
+#### Python
+
+```python
+```
+
+
+
+### 课后练习
+
+![](./img/004.png)
+
+如上二叉树：
+
+- 删除 1，则所有都删除了
+- 删除 3，则删除的有 3、5、4
+
+现在要求，考虑子树的情况，如：
+
+- 删除 1，则保留 2，但是 1， 3，5，4 会被删除掉
+- 删除 3，则保留 5，但是 3，4 会被删除掉
+
+
+
+思路:
+
+```
+先判断删除的是否是根节点，如果是根节点，要单独处理
+然后判断删除的是否是左节点，如果不是左节点，再判断是否是右节点
+如果都不是，则递归的判断是否是左节点，递归判断是否是右节点
+还不是，则返回false，代表没有找到
+```
+
+
+
+```java
+package com.watermelon.tree;
+
+public class A03BinaryTreeDeletePractice {
+
+    public static void main(String[] args) {
+        HeroNode root = new HeroNode(1, "张三");
+        HeroNode node2 = new HeroNode(2, "李四");
+        HeroNode node3 = new HeroNode(3, "王老五");
+        HeroNode node4 = new HeroNode(4, "朱重八");
+        HeroNode node5 = new HeroNode(5, "刘大力");
+        root.setLeft(node2);
+        root.setRight(node3);
+        node3.setLeft(node5);
+        node3.setRight(node4);
+
+        Binary binary = new Binary(root);
+        binary.preOrder();
+        System.out.println("----------删除后---------");
+        binary.delNode(3);
+        binary.preOrder();
+
+    }
+
+    public static class Binary {
+        private HeroNode root;
+
+        public Binary(HeroNode root) {
+            this.root = root;
+        }
+
+        /**
+         * 先判断删除的是否是根节点，如果是根节点，要单独处理
+         * 然后判断删除的是否是左节点，如果不是左节点，再判断是否是右节点
+         * 如果都不是，则递归的判断是否是左节点，递归判断是否是右节点
+         * 还不是，则返回false，代表没有找到
+         *
+         * @param no
+         */
+        public void delNode(int no) {
+            if (root == null) {
+                return;
+            }
+
+            if (root.no == no) {
+                if (root.left == null && root.right == null) {
+                    root = null;
+                    return;
+                } else if (this.root.left != null) {
+                    //左节点不为空
+                    root = root.left;
+                } else {
+                    //右节点不为空
+                    root = root.right;
+                }
+                return;
+            }
+            root.delNode(no);
+        }
+
+        public void preOrder() {
+            if (root == null) {
+                return;
+            }
+            root.preOrder();
+        }
+    }
+
+    public static class HeroNode {
+        private int no;
+        private String name;
+        private HeroNode left;
+        private HeroNode right;
+
+        public HeroNode(int no, String name) {
+            this.no = no;
+            this.name = name;
+        }
+
+        public HeroNode getLeft() {
+            return left;
+        }
+
+        public void setLeft(HeroNode left) {
+            this.left = left;
+        }
+
+        public HeroNode getRight() {
+            return right;
+        }
+
+        public void setRight(HeroNode right) {
+            this.right = right;
+        }
+
+        @Override
+        public String toString() {
+            return "HeroNode{" +
+                    "no=" + no +
+                    ", name='" + name + '\'' +
+                    '}';
+        }
+
+
+        public boolean delNode(int no) {
+
+            if (this.left != null) {
+                if (this.left.no == no) {
+                    if (this.left.left != null) {
+                        this.left = this.left.left;
+                    } else if (this.left.right != null) {
+                        this.left = this.left.right;
+                    } else {
+                        this.left = null;
+                    }
+                    return true;
+                }
+            }
+            if (this.right != null) {
+                if (this.right.no == no) {
+                    if (this.right.left != null) {
+                        this.right = this.right.left;
+                    } else if (this.right.right != null) {
+                        this.right = this.right.right;
+                    } else {
+                        this.right = null;
+                    }
+                    return true;
+                }
+            }
+            if (this.left != null) {
+                if (this.left.delNode(no)) {
+                    return true;
+                }
+            }
+            if (this.right != null) {
+                if (this.right.delNode(no)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+
+        public void preOrder() {
+            System.out.println(this);
+            if (this.left != null) {
+                this.left.preOrder();
+            }
+            if (this.right != null) {
+                this.right.preOrder();
+            }
+        }
+    }
+}
+```
+
+
+
+## 序列存储的二叉树
+
+从数据存储来看，**数组存储** 方式和 **树** 的存储方式可以 **相互转换**。即使数组可以转换成树，树也可以转换成数组。如下示意图
+
+![](./img/005.png)
+
+上图阅读说明：
+
+- 圆圈顶部的数字对应了数组中的索引
+- 圆圈内部的值对应的数数组元素的值
+
+现在有两个要求：
+
+1. 上图的二叉树的节点，要求以数组的方式来存储 `arr=[1,2,3,4,5,6,7]`
+2. 要求在遍历数组 arr 时，仍然可以以 前序、中序、后序的方式遍历
+
+
+
+### 特点
+
+想要 实现上面的两个要求，需要知道顺序存储二叉树的特点：
+
+1. 顺序二叉树 通常只考虑 **完全二叉树**
+2. 第 n 个元素的 **左子节点** 为 `2*n+1`
+3. 第 n 个元素的 **右子节点** 为 `2*n+2`
+4. 第 n 个元素的 **父节点** 为 `(n-1)/2`
+
+注：n 表示二叉树中的第几个元素（按 0 开始编号）
+
+比如：
+
+- 元素 2 的左子节点为：`2 * 1 + 1 = 3`，对比上图去查看，的确是 3
+- 元素 2 的右子节点为：`2 * 1 + 2 = 4`，也 就是元素 5
+- 元素 3 的左子节点为：`2 * 2 + 1 = 5`，也就是元素 6
+- 元素 3 的父节点为: `(2-1)/2= 1/2 = 0`，也就是根节点 1
+
+
+
+### 前序打印
+
+使用如上的知识点，进行前序遍历，需求：将数组 `arr=[1,2,3,4,5,6,7]`，以二叉树前序遍历的方式进行遍历，遍历结果为 `1、2、4、5、3、6`
+
+
+
+
+
+```java
+package com.watermelon.tree;
+
+
+/**
+ * 将顺序存储的二叉树 以 前序、中序、后序的方式打印
+ * 左节点索引值为 2*n+1
+ * 右节点索引值为 2*n+2
+ * 父节点索引值为 (n-1)/2
+ */
+public class A04ArrayToPreOrder {
+    public static void main(String[] args) {
+        int[] data = {1, 2, 3, 4, 5, 6, 7};
+        ArrayToPrint printer = new ArrayToPrint(data);
+        printer.prePrint();
+    }
+
+    public static class ArrayToPrint {
+        private int[] data;
+
+        public ArrayToPrint(int[] data) {
+            this.data = data;
+        }
+
+        public void prePrint() {
+            prePrint(0);
+        }
+
+        /**
+         * 前序的方式打印:递归方式
+         * 左节点索引值为 2*n+1
+         * 右节点索引值为 2*n+2
+         * 1,2,4,5,3,6,7
+         *
+         * @param index 当前索引值
+         */
+        private void prePrint(int index) {
+            if (data == null || data.length == 0) {
+                return;
+            }
+            System.out.println(data[index]);
+            if (2 * index + 1 < data.length) {
+                prePrint(2 * index + 1);
+            }
+            if (2 * index + 2 < data.length) {
+                prePrint(2 * index + 2);
+            }
+        }
+}
+
+```
+
+
+
+### 中序打印
+
+```java
+package com.watermelon.tree;
+
+
+/**
+ * 将顺序存储的二叉树 以 前序、中序、后序的方式打印
+ * 左节点索引值为 2*n+1
+ * 右节点索引值为 2*n+2
+ * 父节点索引值为 (n-1)/2
+ */
+public class A04ArrayToPreOrder {
+    public static void main(String[] args) {
+        int[] data = {1, 2, 3, 4, 5, 6, 7};
+        ArrayToPrint printer = new ArrayToPrint(data);
+        printer.infixPrint();
+    }
+
+    public static class ArrayToPrint {
+        private int[] data;
+
+        public ArrayToPrint(int[] data) {
+            this.data = data;
+        }
+      
+        public void infixPrint() {
+            infixPrint(0);
+        }
+
+        /**
+         * 中序打印
+         * 4,2,5,1,6,3,7
+         *
+         * @param index
+         */
+        private void infixPrint(int index) {
+            if (data == null || data.length == 0) {
+                return;
+            }
+            if (2 * index + 1 < data.length) {
+                infixPrint(2 * index + 1);
+            }
+
+            System.out.println(data[index]);
+
+            if (2 * index + 2 < data.length) {
+                infixPrint(2 * index + 2);
+            }
+        }
+    }
+}
+
+```
+
+
+
+### 后序打印
+
+```java
+package com.watermelon.tree;
+
+
+/**
+ * 将顺序存储的二叉树 以 前序、中序、后序的方式打印
+ * 左节点索引值为 2*n+1
+ * 右节点索引值为 2*n+2
+ * 父节点索引值为 (n-1)/2
+ */
+public class A04ArrayToPreOrder {
+    public static void main(String[] args) {
+        int[] data = {1, 2, 3, 4, 5, 6, 7};
+        ArrayToPrint printer = new ArrayToPrint(data);
+        printer.postPrint();
+    }
+
+    public static class ArrayToPrint {
+        private int[] data;
+
+        public ArrayToPrint(int[] data) {
+            this.data = data;
+        }
+
+        public void postPrint() {
+            postPrint(0);
+        }
+
+
+        /**
+         * 后序打印
+         * 4,5,2,6,7,3,1
+         *
+         * @param index
+         */
+        private void postPrint(int index) {
+            if (data == null || data.length == 0) {
+                return;
+            }
+            if (2 * index + 1 < data.length) {
+                postPrint(2 * index + 1);
+            }
+            if (2 * index + 2 < data.length) {
+                postPrint(2 * index + 2);
+            }
+            System.out.println(data[index]);
+        }
+    }
+}
+```
+
+
+
+
+
+## 线索化二叉树
+

@@ -1,5 +1,8 @@
 package com.watermelon.tree;
 
+/**
+ * 二叉树的前序，中序，后序查找法
+ */
 public class A02BinaryTreeSearch {
 
     public static void main(String[] args) {

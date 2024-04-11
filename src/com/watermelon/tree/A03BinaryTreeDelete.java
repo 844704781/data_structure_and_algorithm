@@ -1,9 +1,9 @@
 package com.watermelon.tree;
 
 /**
- * 定义二叉树，前序遍历，中序遍历，后序遍历
+ * 删除二叉树的一个节点，如果有子节点，也一并删除
  */
-public class A01BinaryTree {
+public class A03BinaryTreeDelete {
 
     public static void main(String[] args) {
         HeroNode root = new HeroNode(1, "张三");
@@ -18,48 +18,39 @@ public class A01BinaryTree {
 
         Binary binary = new Binary(root);
         binary.preOrder();
-        binary.infixOrder();
-        binary.postOrder();
+        System.out.println("----------删除后---------");
+        binary.delNode(3);
+        binary.preOrder();
+
     }
 
-
-    static class Binary {
+    public static class Binary {
         private HeroNode root;
 
         public Binary(HeroNode root) {
             this.root = root;
         }
 
+        public void delNode(int no) {
+            if (root == null) {
+                return;
+            }
+            if (root.no == no) {
+                root = null;
+                return;
+            }
+            root.delNode(no);
+        }
+
         public void preOrder() {
-            if (this.root == null) {
-                System.out.println("根节点为空");
+            if (root == null) {
                 return;
             }
-            System.out.println("前序遍历：");
-            this.root.preOrder();
-        }
-
-        public void infixOrder() {
-            if (this.root == null) {
-                System.out.println("根节点为空");
-                return;
-            }
-            System.out.println("中序遍历：");
-            System.out.println();
-            this.root.infixOrder();
-        }
-
-        public void postOrder() {
-            if (this.root == null) {
-                System.out.println("根节点为空");
-                return;
-            }
-            System.out.println("后序遍历：");
-            this.root.postOrder();
+            root.preOrder();
         }
     }
 
-    static class HeroNode {
+    public static class HeroNode {
         private int no;
         private String name;
         private HeroNode left;
@@ -94,10 +85,34 @@ public class A01BinaryTree {
                     '}';
         }
 
-        /**
-         * 前序遍历
-         * 根左右
-         */
+
+        public boolean delNode(int no) {
+            if (this.left != null) {
+                if (this.left.no == no) {
+                    this.left = null;
+                    return true;
+                }
+            }
+            if (this.right != null) {
+                if (this.right.no == no) {
+                    this.right = null;
+                    return true;
+                }
+            }
+            if (this.left != null) {
+                if (this.left.delNode(no)) {
+                    return true;
+                }
+            }
+            if (this.right != null) {
+                if (this.right.delNode(no)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         public void preOrder() {
             System.out.println(this);
             if (this.left != null) {
@@ -107,33 +122,6 @@ public class A01BinaryTree {
                 this.right.preOrder();
             }
         }
-
-        /**
-         * 中序遍历
-         * 左根右
-         */
-        public void infixOrder() {
-            if (this.left != null) {
-                this.left.infixOrder();
-            }
-            System.out.println(this);
-            if (this.right != null) {
-                this.right.infixOrder();
-            }
-        }
-
-        /**
-         * 后序遍历
-         * 左右根
-         */
-        public void postOrder() {
-            if (this.left != null) {
-                this.left.postOrder();
-            }
-            if (this.right != null) {
-                this.right.postOrder();
-            }
-            System.out.println(this);
-        }
     }
 }
+
