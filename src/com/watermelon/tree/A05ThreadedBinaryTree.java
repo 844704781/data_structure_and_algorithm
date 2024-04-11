@@ -6,7 +6,6 @@ package com.watermelon.tree;
  */
 public class A05ThreadedBinaryTree {
     public static void main(String[] args) {
-        int[] data = {1, 3, 6, 8, 10, 14};
         HeroNode root = new HeroNode(1, "张三");
         HeroNode node2 = new HeroNode(3, "李四");
         HeroNode node3 = new HeroNode(6, "王老五");
