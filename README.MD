@@ -1638,3 +1638,749 @@ public class A04ArrayToPreOrder {
 
 ## 线索化二叉树
 
+### 概念
+
+n 个节点的二叉树链表中含有 `n + 1` 个空指针域，他的推导公式为 `2n-(n-1) = n + 1`。
+
+利用二叉链表中的空指针域，存放指向该节点在 **某种遍历次序 \**下的 \*\*前驱\*\* 和 \*\*后继\*\* 节点的指针，这种附加的指针称为\**「线索」**
+
+- 前驱：一个节点的前一个节点
+- 后继：一个节点的后一个节点
+
+如下图:
+
+![](./img/006.png)
+
+
+
+可以看到上图的二叉树为一颗 **完全二叉树**。对他进行分析，可以发现如下的一些问题：
+
+1. 当对上面的二叉树进行中序遍历时，数列为 `8,3,10,1,14,6`
+2. 但是 `6,8,10,14` 这几个节点的左右指针，并没有完全用上
+
+如果希望充分利用各个节点的左右指针，让各个节点可以 **指向自己的前后节点**，这个时候就可以使用 **线索化二叉树** 了
+
+
+
+### 作用
+
+二叉树线索化是一种将普通二叉树转换为具有特殊线索（指向前驱和后继节点）的二叉树的过程。这种线索化的目的是为了提高对二叉树的遍历效率，特别是在不使用递归或栈的情况下进行遍历。
+
+将二叉树线索化的主要目的是为了提高对二叉树的遍历效率以及节省存储空间。线索化使得在不使用递归或栈的情况下可以更快速地进行遍历，特别是在特定顺序的遍历时，如前序、中序或后序遍历。 
+
+* 提高遍历效率：线索化后，可以在常量时间内找到节点的前驱和后继节点，从而实现更高效的遍历。这对于需要频繁遍历大型二叉树或需要在树的中间部分执行插入和删除操作时特别有用。
+
+* 无需递归或栈：线索化的二叉树允许你在遍历时省去递归或栈的开销，因为你可以沿着线索直接访问节点的前驱和后继，从而降低了内存和时间复杂度。
+
+* 节省存储空间：线索化可以用较少的额外存储空间来实现。通常，只需为每个节点添加一个或两个指针来存储线索信息，而不需要额外的数据结构（如堆栈）来辅助遍历。
+
+* 支持双向遍历：线索化的二叉树可以支持双向遍历，即可以在给定节点的前向和后向方向上遍历树。这在某些应用中很有用，例如双向链表的操作。
+
+* 节省计算资源：在某些特定的应用场景中，通过线索化可以避免重复计算，因为可以直接访问前驱和后继节点，而无需再次搜索或遍历
+
+
+
+### 中序线索化二叉树代码
+
+#### 思路
+
+主要还是利用递归中序遍历的思想
+
+先直接递归遍历到最左边的节点
+
+在获取到当前节点时，如果发现当前节点的左节点为空，则指定左指针为上一个节点
+
+如果上一个节点的右节点为空，则指定右指针指向当前节点
+
+确定好后，记录当前节点为下一个节点，开始下一次递归
+
+
+#### Java
+
+```java
+package com.watermelon.tree;
+
+
+/**
+ * 线索化二叉树
+ */
+public class A05ThreadedBinaryTree {
+    public static void main(String[] args) {
+        HeroNode n1 = new HeroNode(1, "张三");
+        HeroNode n3 = new HeroNode(3, "李四");
+        HeroNode n6 = new HeroNode(6, "王老五");
+        HeroNode n8 = new HeroNode(8, "老六");
+        HeroNode n10 = new HeroNode(10, "朱");
+        HeroNode n14 = new HeroNode(14, "赵四");
+        n1.setLeft(n3);
+        n1.setRight(n6);
+        n3.setLeft(n8);
+        n3.setRight(n10);
+        n6.setLeft(n14);
+        ThreadedBinaryTree tree = new ThreadedBinaryTree(n1);
+        tree.preThreadedNodes();
+        tree.preOrder();
+        //8,3,10,1,14,6
+//        System.out.printf("当前节点:%d,左节点:%d,右节点:%d\n", node4.id, node4.left.id, node4.right.id);
+        System.out.printf("当前节点:%d,左节点:%d,右节点:%d\n", n10.id, n10.left.id, n10.right.id);
+        System.out.printf("当前节点:%d,左节点:%d,右节点:%d\n", n14.id, n14.left.id, n14.right);
+
+        System.out.printf("当前节点:%d,左节点:%d,右节点:%d\n", n6.id, n6.left.id, n6.right.id);
+//        tree.preOrder();
+    }
+
+    public static class ThreadedBinaryTree {
+        private HeroNode root;
+        private HeroNode pre;
+
+        public ThreadedBinaryTree(HeroNode root) {
+            this.root = root;
+        }
+
+        public void infixThreadedNodes() {
+            this.infixThreadedNodes(this.root);
+        }
+
+        public void preThreadedNodes() {
+            this.preThreadedNodes(this.root);
+        }
+
+        /**
+         * 线索化二叉树
+         * 使用中序线索化二叉树
+         * 8,3,10,1,14,6
+         */
+        private void infixThreadedNodes(HeroNode node) {
+            if (node == null) {
+                return;
+            }
+            //向左递归
+            infixThreadedNodes(node.left);
+            /**
+             * 处理当前节点
+             * 如果当前节点的左节点为空，则将左指针指向前驱节点
+             * 如果当前节点的右节点为空，由于二叉树节点并没有回路指针，所以先用pre记住当前节点
+             * 然后在回溯到上一个节点时，可以用pre.right = current_node来确定pre节点的后续节点
+             */
+            if (node.left == null) {
+                node.left = pre;
+                node.leftType = 1;
+            }
+            if (pre != null && pre.right == null) {
+                pre.right = node;
+                pre.rightType = 1;
+            }
+            this.pre = node;
+            //向右递归
+            infixThreadedNodes(node.right);
+        }
+
+    }
+
+    public static class HeroNode {
+        private int id;
+        private String name;
+        private HeroNode left;
+        private HeroNode right;
+        /**
+         * 左指针类型
+         * 0:左子树
+         * 1:前驱节点
+         */
+        private int leftType;
+        /**
+         * 右指针类型
+         * 0:右子树
+         * 1:后继节点
+         */
+        private int rightType;
+    }
+
+
+}
+
+```
+
+#### Python
+
+```python
+```
+
+
+
+### 中序线索化二叉树的遍历
+
+#### 思路
+
+顺序还是要用中序遍历的思想
+
+先遍历左边到左边的结尾，中途不打印，到结尾再打印
+
+然后遍历后续指针指向的节点，要打印
+
+最后将当前节点设置为迭代的节点，循环上面的步骤
+
+
+
+#### 代码
+
+##### Java
+
+```java
+        /**
+         * 线索二叉树的中序遍历
+         */
+        private void infixOrder() {
+            HeroNode node = this.root;
+            while (node != null) {
+                while (node.leftType == 0) {
+                    node = node.left;
+                }
+                System.out.println(node);
+                while (node.rightType == 1) {
+                    node = node.right;
+                    System.out.println(node);
+                }
+                node = node.right;
+            }
+        }
+```
+
+
+
+##### Python
+```python
+```
+
+
+
+
+
+### 前序线索化二叉树及遍历
+
+#### 思路
+
+线索化时，利用前序遍历的思想
+
+直接获取当前节点，如果当前节点的左指针为空，则左指针指向上一个节点
+
+如果该节点的右节点为空，则记当前点为上一个节点，在遍历到下一个节点时，上一个节点的右指针指向的后驱节点就是当前节点。
+
+每次遍历都要把当前节点记录为上一个节点
+
+然后左递归
+
+回溯完，然后右递归。
+
+#### 代码
+
+##### Java
+
+```java
+package com.watermelon.tree;
+
+
+/**
+ * 线索化二叉树
+ */
+public class A05ThreadedBinaryTree {
+    public static void main(String[] args) {
+        HeroNode n1 = new HeroNode(1, "张三");
+        HeroNode n3 = new HeroNode(3, "李四");
+        HeroNode n6 = new HeroNode(6, "王老五");
+        HeroNode n8 = new HeroNode(8, "老六");
+        HeroNode n10 = new HeroNode(10, "朱");
+        HeroNode n14 = new HeroNode(14, "赵四");
+        n1.setLeft(n3);
+        n1.setRight(n6);
+        n3.setLeft(n8);
+        n3.setRight(n10);
+        n6.setLeft(n14);
+        ThreadedBinaryTree tree = new ThreadedBinaryTree(n1);
+        tree.preThreadedNodes();
+        tree.preOrder();
+        //8,3,10,1,14,6
+//        System.out.printf("当前节点:%d,左节点:%d,右节点:%d\n", node4.id, node4.left.id, node4.right.id);
+        System.out.printf("当前节点:%d,左节点:%d,右节点:%d\n", n10.id, n10.left.id, n10.right.id);
+        System.out.printf("当前节点:%d,左节点:%d,右节点:%d\n", n14.id, n14.left.id, n14.right);
+
+        System.out.printf("当前节点:%d,左节点:%d,右节点:%d\n", n6.id, n6.left.id, n6.right.id);
+//        tree.preOrder();
+    }
+
+    public static class ThreadedBinaryTree {
+        private HeroNode root;
+        private HeroNode pre;
+
+        public ThreadedBinaryTree(HeroNode root) {
+            this.root = root;
+        }
+
+        public void preThreadedNodes() {
+            this.preThreadedNodes(this.root);
+        }
+
+        /**
+         * 线索化二叉树
+         * 使用前序线索化二叉树
+         * 1,3,8,10,6,14
+         */
+        private void preThreadedNodes(HeroNode node) {
+            if (node == null) {
+                return;
+            }
+            if (node.left == null) {
+                node.left = pre;
+                node.leftType = 1;
+            }
+
+            if (pre != null && pre.right == null) {
+                pre.right = node;
+                pre.rightType = 1;
+            }
+
+            this.pre = node;
+            if (node.leftType == 0) {
+                preThreadedNodes(node.left);
+            }
+
+            if (node.rightType == 0) {
+                preThreadedNodes(node.right);
+            }
+
+        }
+
+        /**
+         * 前序遍历线索二叉树
+         */
+        public void preOrder() {
+            HeroNode node = this.root;
+            System.out.println(node);
+
+            while (node.leftType == 0) {
+                System.out.println(node.left);
+                node = node.left;
+            }
+            while (node.rightType == 1) {
+                System.out.println(node.right);
+                node = node.right;
+            }
+
+        }
+
+    }
+
+    public static class HeroNode {
+        private int id;
+        private String name;
+        private HeroNode left;
+        private HeroNode right;
+        /**
+         * 左指针类型
+         * 0:左子树
+         * 1:前驱节点
+         */
+        private int leftType;
+        /**
+         * 右指针类型
+         * 0:右子树
+         * 1:后继节点
+         */
+        private int rightType;
+    }
+}
+```
+
+
+
+##### Python
+
+```python
+```
+
+
+
+### 后序线索化二叉树及遍历
+
+#### 思路
+
+线索化时，利用后序遍历的思想
+
+先递归左指针
+
+再递归右指针
+
+回溯到当前指针时，直接获取当前节点，如果当前节点的左指针为空，则左指针指向上一个节点
+
+如果该节点的右节点为空，则记当前点为上一个节点，在遍历到下一个节点时，上一个节点的右指针指向的后驱节点就是当前节点。
+
+每次遍历都要把当前节点记录为上一个节点
+
+
+
+遍历思路:
+
+后续遍历时要记住，后序遍历在后续节点遍历完后，会出现没有指针指向下一个要遍历的节点的情况，所以要借用parent指针，线索化时，要顺便把parent的指针的赋值指向好，然后这里遇到指针没有指向下一个要遍历的节点时，就可以使用父指针的右指针继续遍历。
+
+
+
+#### 代码
+
+##### Java
+
+```java
+package com.watermelon.tree;
+
+
+/**
+ * 线索化二叉树
+ */
+public class A05ThreadedBinaryTree {
+    public static void main(String[] args) {
+        HeroNode n1 = new HeroNode(1, "张三");
+        HeroNode n3 = new HeroNode(3, "李四");
+        HeroNode n6 = new HeroNode(6, "王老五");
+        HeroNode n8 = new HeroNode(8, "老六");
+        HeroNode n10 = new HeroNode(10, "朱");
+        HeroNode n14 = new HeroNode(14, "赵四");
+        n1.setLeft(n3);
+        n1.setRight(n6);
+        n3.setLeft(n8);
+        n3.setRight(n10);
+        n6.setLeft(n14);
+        ThreadedBinaryTree tree = new ThreadedBinaryTree(n1);
+        tree.postThreadedNodes();
+        tree.postOrder();
+        //8,3,10,1,14,6
+        System.out.printf("当前节点:%d,左节点:%d,右节点:%d\n", n8.id, n8.left, n8.right.id);
+        System.out.printf("当前节点:%d,左节点:%d,右节点:%d\n", n10.id, n10.left.id, n10.right.id);
+        System.out.printf("当前节点:%d,左节点:%d,右节点:%d\n", n14.id, n14.left.id, n14.right.id);
+
+        System.out.printf("当前节点:%d,左节点:%d,右节点:%d\n", n6.id, n6.left.id, n6.right.id);
+//        tree.preOrder();
+    }
+
+    public static class ThreadedBinaryTree {
+        private HeroNode root;
+        private HeroNode pre;
+
+        public ThreadedBinaryTree(HeroNode root) {
+            this.root = root;
+        }
+      
+        public void postThreadedNodes() {
+            this.postThreadedNodes(this.root);
+        }
+
+        /**
+         * 线索化二叉树
+         * 使用后序遍历线索化二叉树
+         * 8,10,3,14,6,1
+         */
+        private void postThreadedNodes(HeroNode node) {
+            if (node == null) {
+                return;
+            }
+            if (node.left != null) {
+                node.left.setParent(node);
+                postThreadedNodes(node.left);
+            }
+            if (node.right != null) {
+                node.right.setParent(node);
+                postThreadedNodes(node.right);
+            }
+            if (node.left == null) {
+                node.left = pre;
+                node.leftType = 1;
+            }
+            if (pre != null && pre.right == null) {
+                pre.right = node;
+                pre.rightType = 1;
+            }
+            pre = node;
+        }
+
+
+        private void postOrder() {
+            HeroNode node = root;
+            while (node != null) {
+                while (node.leftType == 0) {
+                    node = node.left;
+                }
+                while (node.rightType == 1) {
+                    System.out.println(node);
+                    node = node.right;
+                }
+                System.out.println(node);
+                if (node.parent != null) {
+                    node = node.parent.right;//这一步一定要，因为后序遍历会有个指针没有指向下一个节点，只能回到父节点的右节点继续
+                } else {
+                    node = null;
+                }
+            }
+        }
+    }
+
+    public static class HeroNode {
+        private int id;
+        private String name;
+        private HeroNode left;
+        private HeroNode right;
+        /**
+         * 后序遍历才需要用到
+         */
+        private HeroNode parent;
+        /**
+         * 左指针类型
+         * 0:左子树
+         * 1:前驱节点
+         */
+        private int leftType;
+        /**
+         * 右指针类型
+         * 0:右子树
+         * 1:后继节点
+         */
+        private int rightType;
+    }
+
+
+}
+
+```
+
+
+
+
+
+##### Python
+
+```python
+```
+
+
+
+## 堆
+
+### 堆的概念
+
+堆是具有堆序性的完全二叉树
+
+* 大顶堆
+
+  每个节点的值都 **大于或等于** 其左右孩子节点的值
+
+  ![007](./img/007.png)
+
+  此堆在数组中的表示如下图:
+  ![](./img/009.png)
+  
+  大顶堆特点：`arr[i] >= arr[2*i+1] && arr[i] >= arr[2*i+2]`，i 对应第几个节点，i 从 0 开始编号
+  
+  
+
+* 小顶堆
+  每个节点的值都 **小于或等于** 其左右孩子节点的值
+
+  ![](./img/008.png)
+  小顶堆特点：`arr[i] <= arr[2*i+1] && arr[i] <= arr[2*i+2]`，i 对应第几个节点，i 从 0 开始
+  
+  注：堆序性没有要求左右值的大小关系
+
+### 堆排序
+
+- 升序：一般采用大顶堆
+- 降序：一般采用小顶堆
+
+要实现堆排序，需要知道完全二叉树的以下知识
+
+1. 最后一个非叶子结点的索引值为: n/2-1
+2. 任意一个结点的左子节点索引为: 2*n+1
+3. 任意一个节点的右子节点索引为: 2*n+2
+
+#### 思路
+
+升序排序主要分两步
+
+1. 循环这个步骤直到当前索引值从最后一个非叶子结点到了堆顶
+
+   ​	将当前结点的完全二叉树序列调整成大顶堆序列
+
+2. 循环下面这个步骤直到完全二叉树的长度为0
+
+   ​	交换堆顶和堆尾的位置,交换好后，此时的堆尾就是已经排好序的序列了
+
+   ​	从堆顶开始调整完全二叉树序列(此时不需要包括已经排好序的序列)，又得到个大顶堆
+
+调整完全二叉树成为大顶堆的思路:
+
+* 递归实现思路:
+
+	1. 对于当前节点，比较其与左右子节点的大小关系，如果存在左右子节点且左右节点中的较大者大于当前节点，则将较大的子节点与当前节点交换位置。
+
+	2. 如果发生了交换操作，继续递归调整被交换节点的子树，以确保子树也满足大顶堆的性质。
+* 非递归实现思路:
+  1. 循环操作：  
+     1. 比较当前节点与其左右子节点的大小关系，如果存在左右子节点且左右节点中的较大者大于当前节点，则将较大的子节点与当前节点交换位置。
+     2. 如果发生了交换操作，将当前交换的节点设置为当前节点，继续循环操作，以确保子树也满足大顶堆的性质。
+  2. 结束条件： 
+     1. 如果循环中没有发生交换操作，证明已经是大顶堆。 
+     2. 如果当前节点的左右节点都越界了，即没有左右子节点，证明当前节点已经是最后一层叶子结点了。
+
+
+
+
+#### 代码
+
+##### Java
+
+```java
+package com.watermelon.sort;
+
+
+public class B08HeapSortV1 extends B00Sort {
+
+    public static void main(String[] args) {
+//        int[] array = {3, 7, 1, 2, 6, 8, 0, 9, 4};
+        int[] array = B00Sort.randomArray(800_0000);
+        new B08HeapSortV1("递归堆排序").executeAndTime(array);
+//        System.out.println(Arrays.toString(array));
+    }
+
+    public B08HeapSortV1(String name) {
+        super(name);
+    }
+
+    /**
+     * 堆排序
+     *
+     * @param data
+     */
+    @Override
+    public void sort(int[] data) {
+        //遍历当前要排序的堆
+        /**
+         * 1. 循环这个步骤直到当前索引值从最后一个非叶子结点到了堆顶
+         *      将当前结点的完全二叉树序列调整成大顶堆序列
+         * 2. 循环下面这个步骤直到完全二叉树的长度为0
+         *      交换堆顶和堆尾的位置,交换好后，此时的堆尾就是已经排好序的序列了
+         *      从堆顶开始调整完全二叉树序列(此时不需要包括已经排好序的序列)，又得到个大顶堆
+         */
+        int len = data.length;
+        for (int i = len / 2 - 1; i >= 0; i--) {
+            /**
+             * 从最后一个非叶子结点开始调整堆-->得到大顶堆序列
+             */
+            adjustHeap(data, i, len);
+        }
+        for (int i = len - 1; i > 0; i--) {
+            /**
+             * 循环下面这个步骤直到完全二叉树的长度为0
+             *  交换堆顶和堆尾的位置,交换好后，此时的堆尾就是已经排好序的序列了
+             *  从堆顶开始调整完全二叉树序列(此时不需要包括已经排好序的序列)，又得到个大顶堆
+             */
+            swap(data, 0, i);//堆排序完，交换堆顶和队尾的位置
+            adjustHeap(data, 0, i);//从对顶开始下沉排序
+        }
+    }
+  
+    /**
+     * 对堆顶位置为i的子堆进行下沉堆排序,非递归操作
+     * 循环操作
+     * 1. 对于当前节点，比较其与左右子节点的大小关系，如果存在左右子节点且左右节点中的较大者大于当前节点，则将较大的子节点与当前节点交换位置。
+     * 2. 如果发生了交换操作，将当前交换的节点设置为当前节点，继续循环操作，以确保子树也满足大顶堆的性质。】
+     * 什么时候结束:
+     * 1. 没发生交换，证明已经是大顶堆了
+     * 2. 当前节点的左右节点都越界了，则证明当前节点已经是最后一层叶子结点了
+     *
+     * @param data
+     * @param i    非叶子结点
+     * @param len  属于堆的序列长度
+     */
+    private static void adjustHeap(int[] data, int i, int len) {
+        int left;
+        int right;
+        while (true) {
+            left = 2 * i + 1;
+            right = 2 * i + 2;
+            if (right < len) {
+                //有左节点和右节点
+                if (data[left] < data[right]) {
+                    //right更大
+                    if (data[i] < data[right]) {
+                        swap(data, right, i);
+                        i = right;
+                    } else {
+                        break;
+                    }
+                } else {
+                    //left更大
+                    if (data[i] < data[left]) {
+                        swap(data, left, i);
+                        i = left;
+                    } else {
+                        break;
+                    }
+                }
+            } else if (left < len) {
+                //只有一个左节点
+                if (data[i] < data[left]) {
+                    swap(data, left, i);
+                } else {
+                    break;
+                }
+            } else {
+                //左右节点都越界了
+                break;
+            }
+        }
+    }
+  
+    /**
+     * 对堆顶位置为i的子堆进行下沉堆排序，递归操作
+     * 1. 对于当前节点，比较其与左右子节点的大小关系，如果存在左右子节点且左右节点中的较大者大于当前节点，则将较大的子节点与当前节点交换位置。
+     * 2. 如果发生了交换操作，继续递归调整被交换节点的子树，以确保子树也满足大顶堆的性质。
+     *
+     * @param data
+     * @param i    非叶子结点
+     * @param len  属于堆的序列长度
+     */
+    private static void adjustHeap1(int[] data, int i, int len) {
+        int left = 2 * i + 1;
+        int right = 2 * i + 2;
+        if (right < len) {
+            //有左节点和右节点
+            if (data[left] < data[right]) {
+                //right更大
+                if (data[i] < data[right]) {
+                    swap(data, right, i);
+                    adjustHeap(data, right, len);
+                }
+            } else {
+                //left更大
+                if (data[i] < data[left]) {
+                    swap(data, left, i);
+                    adjustHeap(data, left, len);
+                }
+            }
+        } else if (left < len) {
+            //只有一个左节点
+            if (data[i] < data[left]) {
+                swap(data, left, i);
+            }
+        }
+    }
+
+    private static void swap(int[] data, int i, int j) {
+        int temp = data[j];
+        data[j] = data[i];
+        data[i] = temp;
+    }
+}
+
+```
+
+
+
+
+
