@@ -22,30 +22,87 @@ public class A07HuffmanCompression {
 //        String str = "我是一个中国人，我热爱中国";
         List<Node> data = toList(str);
         Node huffman = toHuffmanTree(new ArrayList<>(data));
-        System.out.println(data);
+        System.out.println("----哈夫曼树------");
         huffman.preOrder();
-        System.out.println("---------------");
-        Map<Integer, Byte> map = new HashMap<>(data.size());
+        System.out.println("----------");
+
+        Map<Byte, String> map = new HashMap<>(data.size());
         for (Node node : data) {
             //得到每个叶子节点
-            byte prefixCode = huffman.getPrefixCode(node);
-            map.put(Integer.valueOf(node.getC()), prefixCode);
+            String prefixCode = huffman.getPrefixCode(node);
+            map.put(node.getValue(), prefixCode);
         }
-        System.out.println(map);
+        System.out.println("-------哈夫曼编码表:--------");
+        System.out.println(map);//哈夫曼编码表
         System.out.println("---------------");
-        List<Byte> bytes = new ArrayList<>();
+        List<String> result = new ArrayList<>();//哈夫曼编码后的字节字符串列表
         for (Character c : str.toCharArray()) {
-            byte prefixCode = map.get(Integer.valueOf(c));
-            bytes.add(prefixCode);
+            byte cByte = (byte) c.charValue();
+            String prefixCode = map.get(cByte);
+            result.add(prefixCode);
         }
-        byte[] result = new byte[bytes.size()];
-        for (int i = 0; i < bytes.size(); i++) {
-            result[i] = bytes.get(i);
+
+
+        byte[] meta = str.getBytes(StandardCharsets.UTF_8);
+        StringBuilder metaSb = new StringBuilder();
+        for (int i = 0; i < meta.length; i++) {
+            byte temp = meta[i];
+            String binaryString = Integer.toBinaryString(temp);
+            metaSb.append(binaryString);
         }
-        byte[] previous = str.getBytes(StandardCharsets.UTF_8);
-        System.out.println("原有长度:" + previous.length + ",压缩后长度：" + result.length);
-        System.out.println(Arrays.toString(previous));
-        System.out.println(Arrays.toString(result));
+        System.out.println("压缩前的字符编码为:" + metaSb);
+        System.out.println("压缩前的字符编码长度为:" + metaSb.length());
+
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < result.size(); i++) {
+            sb.append(result.get(i));
+        }
+        System.out.println("原始字符串对应的赫夫曼字符串编码为:" + sb);
+        System.out.println("原始字符串对应的赫夫曼字符串编码长度为:" + sb.length());
+
+
+        byte[] zipData = zip(result);
+        System.out.println("压缩前的字节数组为:" + Arrays.toString(meta));
+        System.out.println("压缩前的字节数组长度为:" + meta.length);
+        System.out.println("压缩后的字节数组为:" + Arrays.toString(zipData));
+        System.out.println("压缩后的字节长度为:" + zipData.length);
+        System.out.println("压缩率:" + (double) (meta.length - zipData.length) / meta.length);
+    }
+
+    /**
+     * 重新编排字节数组
+     *
+     * @param data
+     * @return
+     */
+    private static byte[] zip(List<String> data) {
+        StringBuilder sb = new StringBuilder();
+        for (String b : data) {
+            sb.append(b);
+        }
+        /**
+         * 将原来哈夫曼编码的二进制字符串每8位重新存储到一个新的字节数组中
+         */
+        int len;
+        if (sb.length() % 8 == 0) {
+            len = sb.length() / 8;
+        } else {
+            len = sb.length() / 8 + 1;
+        }
+
+        byte[] result = new byte[len];
+        for (int i = 0; i < len; i++) {
+            int start = i * 8;
+            int end = i * 8 + 8;
+            String s;
+            if (end > sb.length()) {
+                s = sb.substring(start);
+            } else {
+                s = sb.substring(start, end);
+            }
+            result[i] = Integer.valueOf(s, 2).byteValue();
+        }
+        return result;
     }
 
     /**
@@ -67,7 +124,7 @@ public class A07HuffmanCompression {
         for (Map.Entry<Character, Integer> keyValue : cti.entrySet()) {
             char c = keyValue.getKey();
             int weight = keyValue.getValue();
-            result.add(new Node(c, weight));
+            result.add(new Node(c, (byte) c, weight));
         }
         Collections.sort(result);
         return result;
@@ -99,6 +156,7 @@ public class A07HuffmanCompression {
         /**
          * 放对应字符
          */
+        private Byte value;
         private Character c;
         private Integer weight;
         private Node left;
@@ -108,8 +166,9 @@ public class A07HuffmanCompression {
             this.weight = weight;
         }
 
-        public Node(char c, int weight) {
+        public Node(Character c, Byte value, int weight) {
             this.c = c;
+            this.value = value;
             this.weight = weight;
         }
 
@@ -133,14 +192,23 @@ public class A07HuffmanCompression {
             return weight;
         }
 
-        public Character getC() {
+        public Byte getValue() {
+            return value;
+        }
+
+        public char getC() {
             return c;
+        }
+
+        public void setC(char c) {
+            this.c = c;
         }
 
         @Override
         public String toString() {
             return "Node{" +
-                    "data=" + c +
+                    "data=" + value +
+                    ",c=" + c +
                     ", weight=" + weight +
                     '}';
         }
@@ -156,12 +224,12 @@ public class A07HuffmanCompression {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             Node node = (Node) o;
-            return Objects.equals(c, node.c) && Objects.equals(weight, node.weight);
+            return Objects.equals(value, node.value) && Objects.equals(weight, node.weight);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(c, weight, left, right);
+            return Objects.hash(value, weight, left, right);
         }
 
         public void preOrder() {
@@ -186,7 +254,7 @@ public class A07HuffmanCompression {
          * @param node
          * @return
          */
-        public byte getPrefixCode(Node node) {
+        public String getPrefixCode(Node node) {
             List<Boolean> trace = new ArrayList<>();
             track(this, node, trace);
 
@@ -194,8 +262,7 @@ public class A07HuffmanCompression {
             for (int i = 0; i < trace.size(); i++) {
                 sbd.append(trace.get(i) ? "1" : "0");
             }
-            byte result = (byte) Integer.parseInt(sbd.toString(), 2);
-            return result;
+            return sbd.toString();
         }
 
         private boolean track(Node currentNode, Node targetNoe, List<Boolean> result) {
