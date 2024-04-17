@@ -2711,25 +2711,334 @@ l: 001     : 01
 
 ### 代码
 
-#### 数据压缩
+#### 数据压缩与解压
 
-##### 思路
-
-> 1. 统计要压缩的数据每个字符出现的次数，从小到大排序
+>1. ##### 压缩思路
 >
-> 2. 以次数为权值构建Huffman树
+>   1. 将原始数据的字符根据权值转成 Huffman 树。
+>   2. 根据 Huffman 树构建 Huffman 表：
+>      - 需要递归记录每个叶子结点的路径，left 为 0，right 为 1，组合的路径为二进制编码。
+>      - Huffman 表格式为：原数据字节 -> Huffman 路径字节。
+>   3. 根据 Huffman 表将原始数据编码成 Huffman 编码字符串：
+>      - 将原字节数组的每个字节替换成 Huffman 路径字节即可。
+>   4. 将 Huffman 编码字符串按 8 位一个字节压缩成 Huffman 压缩字节数组。
 >
-> 3. 计算每个huffman的叶子节点的前缀编码，向左为0，向右为1
+>   ##### 解压思路
 >
->    使用前缀查找的方式查找叶子节点，记录下查找路径，left为0，right为1
->
->    得到 字符->前缀编码的哈希表
->
-> 4. 使用前缀编码表替换要压缩的数据
+>   1. 将 Huffman 压缩字节数组还原成 Huffman 编码的字符串：
+>      - 将 Huffman 压缩字节数组中的每个字节转成二进制拼接成字符串即可。
+>   2. 根据 Huffman 表，将 Huffman 编码字符串解码成原始数据字节数组。
 
 ##### Java
 
 ```java
+package com.watermelon.tree;
+
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.stream.Collectors;
+
+public class HuffmanCompressRelease {
+
+    private static Map<Integer, String> huffmanTable = new HashMap<>();
+
+    public static void main(String[] args) {
+        String str = "i like like like java do you like a java";
+//        String str = "我是中国人，我爱中国";
+        byte[] strBytes = str.getBytes(StandardCharsets.UTF_8);
+        System.out.println("原始数据字节:" + Arrays.toString(strBytes));
+        System.out.println("原始数据字节长度:" + strBytes.length);
+        byte[] zipData = zip(strBytes);
+        System.out.println("压缩后数据字节:" + Arrays.toString(zipData));
+        System.out.println("压缩后数据字节长度:" + zipData.length);
+        System.out.println("压缩率:" + (double) (strBytes.length - zipData.length) / strBytes.length);
+        byte[] unzipData = unzip(zipData);
+        System.out.println("解压后数据字节:" + Arrays.toString(unzipData));
+        System.out.println("解压后数据字节长度:" + unzipData.length);
+        System.out.println("原数据为:" + new String(unzipData, StandardCharsets.UTF_8));
+    }
+
+
+    /**
+     * huffman压缩
+     *
+     * @param data
+     * @return
+     */
+    private static byte[] zip(byte[] data) {
+        //1. 将原始数据的字符转成huffman树，构建huffman树
+        huffmanTable = toHuffmanTable(data);
+        System.out.println("huffman表:" + huffmanTable);
+        //2. 根据huffman表和原数据构建huffman转义后的二进制字符串
+        String huffmanStr = toHuffmanCode(huffmanTable, data);
+        System.out.println("huffman字符串:" + huffmanStr);
+        //3. 将二进制字符串按照8位转成bytes返回
+        return toHuffmanBytes(huffmanStr);
+    }
+
+    /**
+     * 将huffman编码字符串转成huffman编码的字节数组
+     *
+     * @param huffmanStr
+     * @return
+     */
+    private static byte[] toHuffmanBytes(String huffmanStr) {
+        List<String> binaryList = new ArrayList<>();
+        StringBuilder temp = new StringBuilder();
+
+        for (int i = 0; i < huffmanStr.length(); i++) {
+            temp.append(huffmanStr.charAt(i));
+            if (temp.length() == 8 || i == huffmanStr.length() - 1) {
+                binaryList.add(temp.toString());
+                temp.setLength(0);
+            }
+
+        }
+        byte[] result = new byte[binaryList.size()];
+        for (int i = 0; i < binaryList.size(); i++) {
+            String binary = binaryList.get(i);
+            Integer value = Integer.valueOf(binary, 2);
+            result[i] = value.byteValue();
+        }
+        return result;
+    }
+
+    /**
+     * 根据huffman表，将原字节数组转成huffman编码字符串
+     *
+     * @param huffmanTable
+     * @param data
+     * @return
+     */
+    private static String toHuffmanCode(Map<Integer, String> huffmanTable, byte[] data) {
+        StringBuilder sb = new StringBuilder();
+        for (byte temp : data) {
+            String huffmanCode = huffmanTable.get(Integer.valueOf(temp));
+            sb.append(huffmanCode);
+        }
+        return sb.toString();
+    }
+
+
+    /**
+     * 从huffman数中获取huffman值
+     *
+     * @param node
+     * @param huffmanValue
+     */
+    private static boolean trace(Node currentNode, Node node, List<Boolean> huffmanValue) {
+
+        if (currentNode.equals(node)) {
+            return true;
+        }
+        if (currentNode.left != null) {
+            huffmanValue.add(false);
+            if (trace(currentNode.left, node, huffmanValue)) {
+                return true;
+            }
+            huffmanValue.remove(huffmanValue.size() - 1);
+        }
+        if (currentNode.right != null) {
+            huffmanValue.add(true);
+            if (trace(currentNode.right, node, huffmanValue)) {
+                return true;
+            }
+            huffmanValue.remove(huffmanValue.size() - 1);
+        }
+        return false;
+    }
+
+    /**
+     * 构建huffman表
+     *
+     * @param data
+     * @return
+     */
+    private static Map<Integer, String> toHuffmanTable(byte[] data) {
+        Map<Byte, Integer> keyCountMap = new HashMap<>();
+        for (byte key : data) {
+            Integer count = keyCountMap.get(key);
+            if (count == null) {
+                keyCountMap.put(key, 1);
+            } else {
+                keyCountMap.put(key, count + 1);
+            }
+        }
+
+        List<Node> nodes = keyCountMap.entrySet().stream()
+                .map(entry ->
+                        new Node(entry.getKey().intValue(),
+                                (char) entry.getKey().byteValue(),
+                                entry.getValue())).collect(Collectors.toList()
+                );
+        //构建huffman树
+        Node huffmanTree = beTree(new ArrayList<>(nodes));
+//        huffmanTree.preOrder();
+        /**
+         * 构建huffman表
+         */
+        Map<Integer, String> result = new HashMap<>();
+        for (Node node : nodes) {
+            List<Boolean> huffmanValue = new ArrayList<>();
+            trace(huffmanTree, node, huffmanValue);
+            StringBuilder sb = new StringBuilder();
+            huffmanValue.forEach(value -> {
+                sb.append(value == true ? "1" : "0");
+            });
+            result.put(node.data, sb.toString());
+        }
+        return result;
+    }
+
+    private static Node beTree(List<Node> nodes) {
+        while (nodes.size() > 1) {
+            Collections.sort(nodes);
+            Node left = nodes.get(0);
+            Node right = nodes.get(1);
+            Node parent = new Node(null, null, left.weight + right.weight);
+            nodes.remove(0);
+            nodes.remove(0);
+            parent.setLeft(left);
+            parent.setRight(right);
+            nodes.add(parent);
+        }
+        return nodes.get(0);
+    }
+
+    /**
+     * huffman解压
+     *
+     * @param data
+     * @return
+     */
+    private static byte[] unzip(byte[] data) {
+        /**
+         * 1.将字节data还原成哈夫曼编码字节
+         * 2.根据huffman编码表，将哈夫曼字节还原成原始字节
+         */
+        StringBuilder huffmanStr = new StringBuilder();
+        for (int i = 0; i < data.length; i++) {
+            byte b = data[i];
+            boolean flag = b > 0 ? true : false;
+            if (i == data.length - 1) {
+                flag = false;
+            }
+
+            String binary = to8BinaryString(flag, b);
+            huffmanStr.append(binary);
+        }
+        System.out.println("huffman字符串:" + huffmanStr);
+        Map<String, Integer> huffmanValueKey = huffmanTable.entrySet().stream().collect(Collectors.toMap(x -> x.getValue(), x -> x.getKey()));
+        StringBuilder huffmanCode = new StringBuilder();
+
+        List<Integer> sourceKeys = new ArrayList<>();
+        for (char bit : huffmanStr.toString().toCharArray()) {
+            huffmanCode.append(bit);
+            Integer sourceKey = huffmanValueKey.get(huffmanCode.toString());
+            if (sourceKey != null) {
+                sourceKeys.add(sourceKey);
+                huffmanCode.setLength(0);
+            }
+        }
+        byte[] result = new byte[sourceKeys.size()];
+        for (int i = 0; i < sourceKeys.size(); i++) {
+            Integer sourceKey = sourceKeys.get(i);
+            result[i] = sourceKey.byteValue();
+        }
+        return result;
+    }
+
+    /**
+     * 获取byte的8位二进制
+     *
+     * @param flag 是否需要补位
+     * @param data 十进制数
+     * @return
+     */
+    private static String to8BinaryString(boolean flag, int data) {
+
+        if (flag) {
+            data |= 256;
+        }
+        String result = Integer.toBinaryString(data);
+
+        if (result.length() > 8) {
+            return result.substring(result.length() - 8);
+        }
+        return result;
+    }
+
+    public static class Node implements Comparable<Node> {
+        private Integer data;
+        private Character c;
+        private Integer weight;
+        private Node left;
+        private Node right;
+
+        public Node(Integer data, Character c, Integer weight) {
+            this.data = data;
+            this.c = c;
+            this.weight = weight;
+        }
+
+        public Node getLeft() {
+            return left;
+        }
+
+        public void setLeft(Node left) {
+            this.left = left;
+        }
+
+        public Node getRight() {
+            return right;
+        }
+
+        public void setRight(Node right) {
+            this.right = right;
+        }
+
+        @Override
+        public String toString() {
+            return "Node{" +
+                    "data=" + data +
+                    ", c=" + c +
+                    ", weight=" + weight +
+                    '}';
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Node node = (Node) o;
+            return Objects.equals(data, node.data) && Objects.equals(c, node.c) && Objects.equals(weight, node.weight);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(data, c, weight);
+        }
+
+        @Override
+        public int compareTo(Node o) {
+            return this.weight - o.weight;
+        }
+
+        public void preOrder() {
+            this.preOrder(this);
+        }
+
+        private void preOrder(Node node) {
+            System.out.println(node);
+            if (node.left != null) {
+                preOrder(node.left);
+            }
+            if (node.right != null) {
+                preOrder(node.right);
+            }
+        }
+    }
+}
 ```
 
 
@@ -2737,5 +3046,651 @@ l: 001     : 01
 ##### Python
 
 ```python
+```
+
+## 二叉排序树
+
+### 定义
+
+二叉排序树简称BST
+
+对于二叉排序树的任何一个 **非叶子节点**，要求如下：
+
+- 左节点，比父节点小
+- 右节点，比父节点大
+
+特殊说明：如果有有相同的值，可以将该节点放在左节点或右节点。当然，最理想的是没有重复的值，比如 Mysql 中的 B 树索引，就是以主键 ID 来排序的。
+
+比如对下面这个二叉树增加一个节点：
+
+![](./img/031.png)
+
+1. 从根节点开始，发现比 7 小，直接往左子树查找，相当于直接折半了
+2. 比 3 小，再次折半
+3. 比 1 大：直接挂在 1 的右节点
+
+
+
+如果添加节点4，则按照上面的思路，是添加到5节点的左侧
+
+### 创建与遍历
+
+#### 代码
+
+##### 思路
+
+* 增加
+
+  通过递归的方式，如果当前节点没有左节点，则直接加到左节点，否则左节点递归加入
+
+
+
+### 删除
+
+#### 思路
+
+由于节点只有 left 和 right，是单向节点，要删除一个节点：
+
+1. 先找到这个要删除 **目标节点**
+
+2. 找到这个目标节点的 **父节点**
+
+   只有一种情况没有父节点，那就是目标节点就是 root 节点
+
+找到父节点之后，我们才可以删掉目标节点，那么就有如下三类情况需要考虑：
+
+1. 目标节点是 **叶子节点**
+
+   ![](./img/032.png)
+
+	
+	
+	1. 如果目标节点是 **父节点的 left 节点**，那么 left 置空
+	2. 如果目标节点是 **父节点的 right 节点**，那么 rigt 置空
+
+2. 目标节点有 **一颗子节点** left 或则 right，那么就需要将目标节点的子节点提升到目标节点位置上
+
+   ![](./img/033.png)
+
+   1. 如果目标节点是 **父节点 的 left 节点**，那么将 left 或 right 节点设置为 父节点的 left 节点
+   2. 如果目标节点是 **父节点 的 right 节点**，那么将 left 或 right 节点设置为父节点的 right 节点
+
+   简单说：因为目标节点有一颗子节点，将目标节点删除，将目标节点的子节点放到被删除的位置上。
+
+   
+
+3. 目标节点有 **两颗子节点**
+
+   ![](./img/034.png)
+
+   
+
+   1. 以目标节点为根节点，**往右子树的**，**左子树**一直 **找到最小的节点**，删除它，并持有它
+   2. 把目标节点从父节点的 left 或 right 中删掉
+      1. 删掉的位置：**替换上第 1 步中删掉的最小节点**。
+      2. 将 **最小节点的 left 节点** 重置为 **目标节点的 left 节点**
+
+**代码思路**
+
+* 写个方法直接找到要删除的节点
+
+* 写个方法找到要删除节点的父节点
+
+* 删除二叉排序树主要需要考虑一下几点
+
+  1. 删除的节点是根节点
+
+     当前根节点无子树
+
+     ​	直接置空
+
+     当前根节点有一颗子树
+
+     ​	将当前节点的子树代替当前节点
+
+     当前根节点有两个子树
+
+     ​	获取当前节点左子树的权值最大的节点代替要删除的节点
+
+     ​	或者获取当前节点右子树小小的节点代替要删除的节点
+
+  2. 删除的节点是叶子结点
+
+     ​	将父节点对应的指针指向空
+
+  3. 删除的节点只有一颗子树
+
+     ​	将父节点对应的指针指向子树
+
+  4. 删除的节点有两个子树
+
+     ​	获取当前节点左子树的权值最大的节点代替要删除的节点
+
+     ​    或者获取当前节点右子树小小的节点代替要删除的节点
+
+#### 代码
+
+##### Java
+
+```java
+package com.watermelon.tree;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+/**
+ * 二叉排序树
+ * 左<=根<=右
+ */
+public class A08BinarySortTree {
+    public static void main(String[] args) {
+        BinarySortTree tree = new BinarySortTree();
+        List<Node> nodes = Arrays.asList(8, 3, 1, 5, 9, 2, 7, 15, 10, 4, 6, 11, 12, 13, 14)
+                .stream()
+                .map(number -> new Node(number))
+                .collect(Collectors.toList());
+        nodes.forEach(tree::add);
+        tree.infixOrder();
+        System.out.println("-----------");
+
+        for (int i = 1; i <= 100; i++) {
+            tree.delete(i);
+            tree.infixOrder();
+            System.out.println("------------");
+        }
+    }
+
+    public static class BinarySortTree {
+        private Node root;
+
+        public void add(Node node) {
+            if (root == null) {
+                root = node;
+            } else {
+                root.add(node);
+            }
+        }
+
+        public void infixOrder() {
+            if (root == null) {
+                return;
+            }
+            root.infixOrder();
+        }
+
+        public Node search(int value) {
+            if (root == null) {
+                return null;
+            } else {
+                return root.search(value);
+            }
+        }
+
+        public Node searchParent(int value) {
+            if (root == null) {
+                return null;
+            } else {
+                if (root.value == value) {
+                    return null;
+                }
+                return root.searchParent(value);
+            }
+        }
+
+        public void delete(int value) {
+            if (root == null) {
+                return;
+            }
+            Node targetNode = root.search(value);
+            if (targetNode == null) {
+                return;
+            }
+            if (targetNode.equals(root)) {
+                //如果要找的是根节点，则直接把根节点置空
+                if (root.left == null && root.right == null) {
+                    root = null;
+                    return;
+                } else if (root.left == null) {
+                    //左边空，右边不空
+                    root = root.right;
+                    return;
+                } else if (root.right == null) {
+                    //右边空，左边不空
+                    root = root.left;
+                    return;
+                } else {
+                    //两边都不空
+                    /**
+                     * 查到最小的节点并将其删除
+                     */
+                    Node minNode = findMinAndDel(targetNode);
+
+                    //代替连接子节点
+                    minNode.left = targetNode.left;
+                    if (minNode.right == null) {
+                        minNode.right = targetNode.right;
+                    }
+
+                    root = minNode;
+                    return;
+                }
+            }
+            Node parentNode = root.searchParent(value);
+
+            if (targetNode.left == null && targetNode.right == null) {
+                /**
+                 * 1. 如果targetNode是叶子结点
+                 *     如果targetNode是parentNode的left节点,则parentNode.left = null
+                 *     否则targetNode是parentNode的right节点，则parentNode.right = null
+                 */
+                if (targetNode.equals(parentNode.left)) {
+                    parentNode.left = null;
+                } else {
+                    parentNode.right = null;
+                }
+            } else if (targetNode.left == null || targetNode.right == null) {
+                /**
+                 * 2. 如果targetNode有一个子节点，则targetNode的父节点与targetNode的子节点连接
+                 *     如果targetNode是parentNode的left节点
+                 *          如果targetNode有左子节点，则parentNode.left = targetNode.left
+                 *          否则parentNode.left = targetNode.right
+                 *     否则
+                 *          如果targetNode有左子节点，则parentNode.right = targetNode.left
+                 *          否则parentNode.right = targetNode.right
+                 */
+                if (targetNode.equals(parentNode.left)) {
+                    if (targetNode.left != null) {
+                        parentNode.left = targetNode.left;
+                    } else {
+                        parentNode.left = targetNode.right;
+                    }
+                } else {
+                    if (targetNode.left != null) {
+                        parentNode.right = targetNode.left;
+                    } else {
+                        parentNode.right = targetNode.right;
+                    }
+                }
+            } else {
+                /**
+                 * 3. 如果targetNode有两个子节点
+                 *     minNode = 从targetNode.right找最小的节点
+                 *     根据minNode找到其父节点minNodeParent,判断minNode是minNodeParent的左节点还是右节点，直接置空
+                 *     minNode.left = targetNode.left
+                 *     minNode.right = targetNode.right
+                 *     如果targetNode是parentNode的左节点
+                 *          则parentNode.left = minNode
+                 *     否则
+                 *          parentNode.right = minNode
+                 *
+                 */
+                Node minNode = findMinAndDel(targetNode);
+                //代替连接父节点
+                if (targetNode.equals(parentNode.left)) {
+                    parentNode.left = minNode;
+                } else {
+                    parentNode.right = minNode;
+                }
+                //代替连接子节点
+                minNode.left = targetNode.left;
+                if (minNode.right == null) {
+                    minNode.right = targetNode.right;
+                }
+            }
+        }
+
+        private Node findMinAndDel(Node targetNode) {
+            Node minNode = targetNode.right.findMinNode();
+            Node minNodeParent = this.searchParent(minNode.value);
+            if (minNode.equals(minNodeParent.left)) {
+                minNodeParent.left = null;
+            } else {
+                minNodeParent.right = null;
+            }
+            return minNode;
+        }
+    }
+
+    public static class Node {
+        private int value;
+        private Node left;
+        private Node right;
+
+        public Node(int value) {
+            this.value = value;
+        }
+
+        public Node getLeft() {
+            return left;
+        }
+
+        public void setLeft(Node left) {
+            this.left = left;
+        }
+
+        public Node getRight() {
+            return right;
+        }
+
+        public void setRight(Node right) {
+            this.right = right;
+        }
+
+        @Override
+        public String toString() {
+            return "Node{" +
+                    "value=" + value +
+                    '}';
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Node node = (Node) o;
+            return value == node.value;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(value);
+        }
+
+        public Node search(int value) {
+            if (this.value == value) {
+                return this;
+            } else if (this.value < value) {
+                if (this.right != null) {
+                    return this.right.search(value);
+                }
+                return null;
+            } else {
+                if (this.left != null) {
+                    return this.left.search(value);
+                }
+                return null;
+            }
+        }
+
+        public Node searchParent(int value) {
+            boolean leftEquals = this.left != null && this.left.value == value;
+            boolean rightEquals = this.right != null && this.right.value == value;
+            if (leftEquals || rightEquals) {
+                return this;
+            } else if (this.value < value) {
+                if (this.right != null) {
+                    return this.right.searchParent(value);
+                }
+            } else {
+                if (this.left != null) {
+                    return this.left.searchParent(value);
+                }
+            }
+            return null;
+        }
+
+        /**
+         * 增加节点
+         *
+         * @param node
+         */
+        public void add(Node node) {
+            if (node.value <= this.value) {
+                if (this.left == null) {
+                    this.left = node;
+                } else {
+                    this.left.add(node);
+                }
+            } else {
+                if (this.right == null) {
+                    this.right = node;
+                } else {
+                    this.right.add(node);
+                }
+            }
+        }
+
+
+        public void infixOrder() {
+            infixOrder(this);
+        }
+
+        /**
+         * 中序遍历
+         */
+        private static void infixOrder(Node node) {
+            if (node.left != null) {
+                infixOrder(node.left);
+            }
+            System.out.println(node);
+            if (node.right != null) {
+                infixOrder(node.right);
+            }
+        }
+
+        /**
+         * 获取当前排序二叉树中最小的节点
+         * 最小的值肯定在当前节点的左子树
+         * 如果当前节点没有左子树，则当前节点就是最小的节点
+         *
+         * @return
+         */
+        public Node findMinNode() {
+            if (this.left == null && this.right == null) {
+                return this;
+            }
+            if (this.left != null) {
+                Node result = this.left.findMinNode();
+                if (result != null) {
+                    return result;
+                }
+            }
+            return this;
+        }
+    }
+}
+```
+
+
+
+##### Python
+
+```python
+class Node:
+    def __init__(self, value):
+        self.__value = value
+        self.__left = None
+        self.__right = None
+
+    @property
+    def left(self):
+        return self.__left
+
+    @left.setter
+    def left(self, left):
+        self.__left = left
+
+    @property
+    def right(self):
+        return self.__right
+
+    @right.setter
+    def right(self, right):
+        self.__right = right
+
+    @property
+    def value(self):
+        return self.__value
+
+    @value.setter
+    def value(self, value):
+        self.__value = value
+
+    def __str__(self):
+        return '{ value: %s }' % self.__value
+
+    def add(self, node: 'Node'):
+        if self.value >= node.value:
+            if self.left is not None:
+                self.left.add(node)
+            else:
+                self.left = node
+        else:
+            if self.right is not None:
+                self.right.add(node)
+            else:
+                self.right = node
+
+    def infix_order(self):
+        if self.left is not None:
+            self.left.infix_order()
+
+        print(self)
+
+        if self.right is not None:
+            self.right.infix_order()
+
+    def search(self, value):
+        if self.value == value:
+            return self
+        elif self.value > value:
+            if self.left is None:
+                return
+            return self.left.search(value)
+        else:
+            if self.right is None:
+                return
+            return self.right.search(value)
+
+    def search_parent(self, node: 'Node'):
+        if ((self.left is not None and self.left.value == node.value)
+                or (self.right is not None and self.right.value == node.value)):
+            return self
+        elif self.value > node.value:
+            if self.left is None:
+                return
+            return self.left.search_parent(node)
+        else:
+            if self.right is None:
+                return
+            return self.right.search_parent(node)
+
+    def find_max(self):
+        current = self
+        while current.right is not None:
+            current = current.right
+        return current
+
+
+class BinarySortTree:
+
+    def __init__(self):
+        self.__root = None
+
+    @property
+    def root(self):
+        return self.__root
+
+    @root.setter
+    def root(self, node):
+        self.__root = node
+
+    def add(self, other: Node):
+        if self.__root is None:
+            self.__root = other
+        else:
+            self.__root.add(other)
+
+    def infix_order(self):
+        if self.__root is None:
+            return
+        self.__root.infix_order()
+
+    def search(self, value) -> Node:
+        return self.root.search(value)
+
+    def search_parent(self, node) -> Node:
+        return self.root.search_parent(node)
+
+    def find_max_and_del(self, node) -> Node:
+        max_node = node.find_max()
+        self.delete(max_node)
+        return max_node
+
+    def delete(self, value):
+        if self.root is None:
+            return
+        target_node = self.search(value)
+
+        if target_node is self.root:
+            # 处理根节点
+            if target_node.left is None and target_node.right is None:
+                self.root = None
+            elif target_node.right is None:
+                # 左节点不为空
+                self.root = self.root.left
+            elif target_node.left is None:
+                self.root = self.root.right
+            else:
+                # 左右都不为空,查找左子树的最大值，将其放在根节点位置
+                max_node = self.find_max_and_del(self.root.left)
+                max_node.right = target_node.right
+                if max_node.left is None:
+                    max_node.left = target_node.left
+                self.root = max_node
+        else:
+            # 处理非根结点
+            parent_node = self.search_parent(target_node)
+
+            if target_node.left is None and target_node.right is None:
+                # 删除的是叶子结点
+                if target_node is parent_node.left:
+                    parent_node.left = None
+                else:
+                    parent_node.right = None
+
+            elif target_node.left is not None or target_node.right is not None:
+                # 有一棵子树
+                if parent_node.left is target_node:
+                    if target_node.left is not None:
+                        parent_node.left = target_node.left
+                    else:
+                        parent_node.left = target_node.right
+                else:
+                    if target_node.left is not None:
+                        parent_node.right = target_node.left
+                    else:
+                        parent_node.right = target_node.right
+            else:
+                # 有两个子树
+                max_node = self.find_max_and_del(target_node.left)
+                max_node.right = target_node.right
+                if max_node.left is None:
+                    max_node.left = target_node.left
+                if target_node is parent_node.left:
+                    parent_node.left = max_node
+                else:
+                    parent_node.right = max_node
+
+
+def main():
+    nodes = [Node(num) for num in [8, 3, 1, 5, 9, 2, 7, 15, 10, 4, 6, 11, 12, 13, 14]]
+
+    tree = BinarySortTree()
+    for node in nodes:
+        tree.add(node)
+
+    for i in range(1, 16):
+        if i == 14:
+            pass
+        tree.delete(i)
+        tree.infix_order()
+        print('%s' % i + "-" * 20)
+
+
+main()
+
 ```
 
