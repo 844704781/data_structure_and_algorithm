@@ -3089,13 +3089,13 @@ public class HuffmanCompressRelease {
 
 #### 思路
 
-由于节点只有 left 和 right，是单向节点，要删除一个节点：
+由于节点只有 left 和 right，且所有节点是单向节点，则要删除一个节，需要:
 
-1. 先找到这个要删除 **目标节点**
+* 先找到这个要删除 **目标节点**
 
-2. 找到这个目标节点的 **父节点**
+* 找到这个目标节点的 **父节点**
 
-   只有一种情况没有父节点，那就是目标节点就是 root 节点
+只有一种情况没有父节点，那就是目标节点就是 root 节点
 
 找到父节点之后，我们才可以删掉目标节点，那么就有如下三类情况需要考虑：
 
@@ -3112,10 +3112,10 @@ public class HuffmanCompressRelease {
 
    ![](./img/033.png)
 
-   1. 如果目标节点是 **父节点 的 left 节点**，那么将 left 或 right 节点设置为 父节点的 left 节点
-   2. 如果目标节点是 **父节点 的 right 节点**，那么将 left 或 right 节点设置为父节点的 right 节点
+   1. 如果目标节点是 **父节点 的 left 节点**，那么将 目标节点的left 或 right 节点设置为 父节点的 left 节点
+   2. 如果目标节点是 **父节点 的 right 节点**，那么将 目标节点的left 或 right 节点设置为父节点的 right 节点
 
-   简单说：因为目标节点有一颗子节点，将目标节点删除，将目标节点的子节点放到被删除的位置上。
+   简单说：因为目标节点有一颗子节点，要目标节点删除，需将目标节点的子节点放到被删除的位置上。
 
    
 
@@ -3125,10 +3125,34 @@ public class HuffmanCompressRelease {
 
    
 
-   1. 以目标节点为根节点，**往右子树的**，**左子树**一直 **找到最小的节点**，删除它，并持有它
+   1. 以目标节点为根节点，**往右子树的**，**左子树**一直 **找到最小的节点min_node**，删除它，并持有它
+   
+      ```java
+      min_node.parent.left = null
+      // 此时min_node已经从二叉树中删除，且临时保存在内存中
+      ```
+   
+      
+   
    2. 把目标节点从父节点的 left 或 right 中删掉
-      1. 删掉的位置：**替换上第 1 步中删掉的最小节点**。
+      1. 删掉的位置：替换上第 1 步中删掉的最小节点min_node，也就是父节点指向
+   
+         ```java
+         parent.right = min_node
+         ```
+   
       2. 将 **最小节点的 left 节点** 重置为 **目标节点的 left 节点**
+   
+         将最小节点的right节点重置为目标节点的right节点
+   
+         ```java
+         min_node.left = target_node.left
+         min_node.right = target_node.right
+         ```
+   
+         
+   
+      
 
 **代码思路**
 
@@ -3693,4 +3717,1407 @@ def main():
 main()
 
 ```
+
+### 查找并删除二叉树右子树的最小节点
+
+#### 思路
+
+有两种思路:
+
+一.通过调用删除方法递归的删除
+
+1. 先用递归的方式去右子树中找出最小的节点
+2. 再用递归的方式调用删除方法将其删除
+
+注意：虽然这里调用了delete，delete也调用了findMinAndDel,但是delete中一定会递归到一个叶子结点，然后向上补充
+
+
+
+二. 通过改变被删节父节点指针的方法删除
+
+1. 先用递归的方式去右子树中找出最小的节点min_node
+
+2. 如果被查找的节点min_node是该节点父节点的左子节点，则父节点的左子节点设置为null
+
+   ```java
+   if (minNode.equals(minNodeParent.left)) {
+                   minNodeParent.left = null;
+   }
+   ```
+
+3. 如果查找的节点min_node没有左子节点,那这个节点肯定是被删除节点的右节点，则直接跳过min_node这个节点即可
+
+   ```java
+   minNodeParent.right = minNodeParent.right.right;
+   ```
+
+#### Java
+
+思路1:
+
+```java
+        private Node findMinAndDel(Node targetNode) {
+            Node minNode = targetNode.right.findMinNode();
+            delete(minNode.value);
+            return minNode;
+        }
+
+        /**
+         * 获取当前排序二叉树中最小的节点
+         * 最小的值肯定在当前节点的左子树
+         * 如果当前节点没有左子树，则当前节点就是最小的节点
+         *
+         * @return
+         */
+        public Node findMinNode() {
+            if (this.left == null && this.right == null) {
+                return this;
+            }
+            if (this.left != null) {
+                Node result = this.left.findMinNode();
+                if (result != null) {
+                    return result;
+                }
+            }
+            return this;
+        }
+```
+
+思路2:
+
+```java
+        private Node findMinAndDel(Node targetNode) {
+            Node minNode = targetNode.right.findMinNode();
+            Node minNodeParent = this.searchParent(minNode.value);
+            if (minNode.equals(minNodeParent.left)) {
+                minNodeParent.left = null;
+            } else {
+                minNodeParent.right = minNodeParent.right.right;
+            }
+            return minNode;
+        }
+```
+
+
+
+## 平衡二叉树(AVL树)
+
+https://www.bilibili.com/video/BV1tZ421q72h/?spm_id_from=333.337.search-card.all.click&vd_source=b151a3d9d3902335a95fde17253afa9f
+
+### 为什么会有平衡二叉树
+
+一个数列 `{1,2,3,4,5,6}`，创建一颗二叉排序树（BST）
+
+![](./img/035.png)
+
+
+
+
+
+创建完成的树如上图所示，那么它存在的问题有以下几点：
+
+创建完成的树如上图所示，那么它存在的问题有以下几点：
+
+1. 左子树全部为空，从形式上看，更像一个单链表
+
+2. 插入速度没有影响
+
+3. 查询速度明显降低
+
+   因为需要依次比较，不能利用二叉排序树的折半优势。而且每次都还要比较左子树，可能比单链表查询速度还慢。
+
+那么解决这个劣势的方案就是：**平衡二叉树（AVL）**。
+
+
+
+### 概念
+
+平衡二叉树也叫 **平衡二叉搜索树（Self-balancing binary search tree）**，又被称为 AVL 树，可以保证 **查询效率较高**。它是解决 **二叉排序** 可能出现的查询问题。
+
+它的特点：是一颗空树或它的 **左右两个子树的高度差的绝对值不超过 1**，并且左右两个子树都是一颗平衡二叉树。
+
+平衡二叉树的常用实现方法有：
+
+- 红黑树
+- AVL（算法）
+- 替罪羊树
+- Treap
+- 伸展树
+
+
+
+如下所述，哪些是平衡二叉树？
+
+![](./img/036.png)
+
+1. 是平衡二叉树：
+
+   - 左子树高度为 2
+   - 右子树高度为 1
+
+   他们差值为 1
+
+2. 也是平衡二叉树
+
+3. 不是平衡二叉树
+
+   1. 左子树高度为 3
+   2. 右子树高度为 1
+
+   他们差值为 2，所以不是
+
+#### 平衡因子
+
+平衡因子 = 当前节点左子树高度 - 当前节点右子树高度
+
+也就是
+
+**balance = this.left.height() - this.right.height**
+
+如果要二叉树平衡，则任意节点的**平衡因子**的**绝对值**都要**小于2**
+
+
+
+### 旋转
+
+当一颗二叉排序树在加入节点时，平衡因子的绝对值大于等于2了，则代表这棵树出现了失衡。
+
+对于失衡的树如果要让他平衡，则需要对这棵树进行旋转。
+
+旋转后的二叉树的中序遍历结果不会发生改变。
+
+二叉树失衡的类型有: LL型，RR型, LR型,RL型。
+
+二叉树的旋转可分为左旋和右旋。
+
+我们先简述下插入时如何对失衡二叉树进行处理:
+
+LL型失衡的二叉树，代表最后插入的节点是左孩子的左子树，需要对失衡节点进行右旋
+
+RR型失衡的二叉树，代表最后插入的节点是右孩子的右子树，需要对失衡节点进行左旋
+
+LR型失衡的二叉树，代表最后插入的节点是左孩子的右子树，需要先对失衡节点的左孩子节点进行左旋，再对失衡节点进行右旋
+
+RL型失衡的二叉树，代表最后插入的节点是右孩子的左子树，需要先对失衡节点的右孩子节点进行右旋，再对失衡节点进行左旋
+
+
+
+#### 左旋
+
+如果二叉树失衡且需要向左旋转 ，左旋如果遇到冲突节点，则冲突的左孩变右孩
+
+如下图是最简单的二叉树左旋
+
+
+
+![简单的二叉树左旋](./img/037.png)
+
+
+
+下图是有冲突的二叉树左旋
+
+![](./img/038.png)
+
+
+
+
+
+##### 编码思路
+
+![](./img/041.png)
+
+插入 40 时，发现10这个节点的平衡因子的绝对值为2，则失衡，这里进行左旋转：
+
+1. 创建一个新的节点 `newNode`，值等于当前 **根节点** 的值（以 10 创建）
+
+   把新节点的 **左子树** 设置为当前节点的 **左子树**
+
+   ```java
+   newNode.left = this.left
+   ```
+
+   把新节点的 **右子树** 设置为当前节点的 **右子树的左子树**
+
+   ```java
+   newNode.right = this.right.left
+   ```
+
+2. 把 **当前节点** 的值换为 **右子节点** 的值
+
+   ```java
+   value = this.right.value
+   ```
+
+   把 **当前节点** 的右子树设置为 **右子树的右子树**
+
+   ```java
+   right = this.right.right
+   ```
+
+3. 把 **当前节点** 的左子树设置为新节点
+
+   ```java
+   this.left = newNode
+   ```
+
+注：左图是调整期，右图是调整后。注意调整期的 20 那个节点，**调整之后，没有节点指向他了**。也就是说，遍历的时候它是不可达的。那么将会自动的被垃圾回收掉。
+
+##### Java
+
+```java
+        /**
+         * 给当前节点左旋
+         */
+        public void leftRotate() {
+            /**
+             * 1. 创建当前节点副本new_node
+             *    new_node.left = this.left
+             *    new_node.right = this.right.left
+             * 2. 将右节点向上提(this = this.right)
+             *    由于java是没法直接将this的指向，所以
+             *    将this.right的内容value放到this中，也就是this.value = this.right.value
+             *    this.right = this.right.right
+             *    此时右节点就相当于this了
+             * 3. this(右节点)的左指针指向new_node
+             *    this.left = new_node
+             */
+            Node newNode = new Node(this.value);
+            newNode.left = this.left;
+            newNode.right = this.right.left;
+
+            this.value = this.right.value;
+            this.right = this.right.right;
+
+            this.left = newNode;
+        }
+```
+
+
+
+##### Python
+
+```python
+```
+
+
+
+
+
+#### 右旋
+
+如果二叉树失衡且需要向右旋转 ，右旋如果遇到冲突节点，则冲突的右孩变左孩
+
+如下图是最简单的二叉树右旋
+
+![](./img/039.png)
+
+下图是有冲突的二叉树右旋
+
+![](./img/040.png)
+
+##### 编码思路
+
+![](./img/042.png)
+
+插入 0 时，发现20这个节点的平衡因子的绝对值为2，则失衡，这里进行右旋转：
+
+1. 创建一个新的节点 `newNode`，值等于当前 **根节点** 的值（以 20 创建）
+
+2. 把新节点的 **右子树** 设置为当前节点的 **右子树**
+
+   ```java
+   newNode.right = this.right
+   ```
+
+3. 把新节点的 **左子树** 设置为当前节点的 **左子树的右子树**
+
+   ```java
+   newNode.left = this.left.right
+   ```
+
+4. 把 **当前节点** 的值换为 **左子节点** 的值
+
+   ```java
+   this.value = this.left.value
+   ```
+
+5. 把 **当前节点** 的左子树设置为 **左子树的左子树**
+
+   ```java
+   this.left = this.left.left
+   ```
+
+6. 把 **当前节点** 的右子树设置为新节点
+
+   ```java
+   this.right = newNode
+   ```
+
+##### Java
+
+```java
+        /**
+         * 给当前节点右旋
+         */
+        private void rightRotate() {
+            /**
+             *  1. 给当前节点创建个副本new_node
+             *   new_node的右节点指向当前节点右节点
+             *   new_node的左节点指向当前节点左节点的右节点
+             *  2. 将当前节点的左节点上移
+             *   this.value = this.left.value
+             *   this.left = this.left.left
+             *  3. 将当前节点的右节点指向new_node
+             *   this.right = new_node
+             */
+            Node newNode = new Node(this.value);
+            newNode.right = this.right;
+            newNode.left = this.left.right;
+
+            this.value = this.left.value;
+            this.left = this.left.left;
+
+            this.right = newNode;
+        }
+```
+
+
+
+##### Python
+
+```python
+```
+
+
+
+#### 失衡二叉树类型
+
+上文介绍了什么是左旋和右旋，我们也介绍了二叉树的失衡条件是平衡因子的绝对值为2，下面我们开始介绍二叉树失衡有哪些类型，并介绍这些失衡类型需要怎么旋转才能再次平衡
+
+
+
+##### LL型([2,1]/[2,0]右旋)
+
+LL型失衡特点:
+
+1. 最后插入的节点位置在左孩子的左子树上
+
+2. 失衡节点平衡因子为**2**
+
+3. 失衡节点左孩子的平衡因子是**1或者0**
+
+   
+
+
+
+当结点处于这种失衡类型时，我们需要将失衡节点进行**右旋**
+
+![](./img/040.png)
+
+
+
+##### LR型([2,-1]左孩子左旋，右旋)
+
+LR型失衡特点:
+
+1. 最后插入的节点位置在左孩子的右子树上
+2. 失衡节点平衡因子为**2**
+3. 失衡节点左孩子的平衡因子是**-1**
+
+
+
+当结点处于这种失衡类型时，我们需要先将失衡节点的左孩子**左旋**，再将失衡节点**右旋**
+
+如下图
+
+先将50以90左旋，冲突的左孩70变50的右孩
+
+再将100以90右旋
+
+![](./img/043.png)
+
+
+
+
+
+
+
+##### RR型([-2,-1]/[-2,0]左旋)
+
+RR型失衡特点:
+
+1. 最后插入的节点位置在右孩子的右子树上
+2. 失衡节点平衡因子为**-2**
+3. 失衡节点左孩子的平衡因子是**-1或者0**
+
+
+
+当结点处于这种失衡类型时，我们需要将失衡节点进行**左旋**
+
+![](./img/038.png)
+
+
+
+##### RL型([-2,1]右孩子右旋，左旋)
+
+RL型失衡特点:
+
+1. 最后插入的节点位置在右孩子的左子树上
+2. 失衡节点平衡因子为**-2**
+3. 失衡节点左孩子的平衡因子是**1**
+
+
+
+当结点处于这种失衡类型时，我们需要先将失衡节点的右孩子**右旋**，再将失衡节点**左旋**
+
+如下图
+
+先将100以60右旋，冲突的右孩70变100的左孩
+
+再将50以60左旋
+
+
+
+![](./img/044.png)
+
+
+
+
+
+### 代码
+
+
+
+#### 二叉树高度回溯算法
+
+##### 思路
+
+![](./img/045.png)
+
+利用递归回溯算法
+
+递归到叶子节点返回0
+
+回溯到非叶子结点左右返回值相比，得到更大的返回值，然后返回值再自增1回溯返回
+
+##### Java
+
+```java
+        /**
+         * 当前节点的高度
+         * 叶子结点回溯返回0，非叶子结点回溯时，返回更大的高度+1
+         *
+         * @return
+         */
+        public int height() {
+            // 如果当前节点为叶子节点（即没有左子树和右子树），则返回高度为0
+            if (this.left == null && this.right == null) {
+                return 0;
+            }
+
+            // 计算左子树的高度
+            int leftHeight = 0;
+            if (this.left != null) {
+                leftHeight = this.left.height();
+            }
+
+            // 计算右子树的高度
+            int rightHeight = 0;
+            if (this.right != null) {
+                rightHeight = this.right.height();
+            }
+            // 返回左右子树中较大的高度加上当前节点的高度（1）
+            if (leftHeight >= rightHeight) {
+                return leftHeight + 1;
+            } else {
+                return rightHeight + 1;
+            }
+        }
+```
+
+
+
+##### Python
+
+```python
+```
+
+
+
+#### AVL平衡算法
+
+如果出现
+
+​	当前平衡因子是2 L,x
+
+​		当前左孩子的平衡因子为-1，则左孩子先左旋，当前节点再右旋 L,R
+
+​		否则直接右旋 LL
+
+​	当前平衡因子是-2 R,x
+
+​		当前右孩子的平衡因子为1，则右孩子先右旋，当前节点再左旋  R,L
+
+​	否则直接左旋 RR
+
+##### Java
+
+```java
+        private void avl() {
+            int balance = this.leftHeight() - this.rightHeight();
+            if (balance == -2) {
+                if (this.right != null) {
+                    int childrenBalance = this.right.leftHeight() - this.right.rightHeight();
+                    /**
+                     * RR是左旋，平衡因子为-2，右孩子平衡因子-1
+                     * RL:先右旋，再左旋
+                     */
+                    if (childrenBalance == 1) {
+                        //RL:先右旋，再左旋
+                        this.right.rightRotate();
+                    }
+                    this.leftRotate();
+                }
+            } else if (balance == 2) {
+                if (this.left != null) {
+                    int childrenBalance = this.left.leftHeight() - this.left.rightHeight();
+                    if (childrenBalance == -1) {
+                        //LR是左旋，平衡因子为2，左孩子平衡因子-1
+                        this.left.leftRotate();
+                    }
+                    this.rightRotate();
+                }
+            }
+        }
+```
+
+##### Python
+
+```python
+```
+
+
+
+
+
+#### 平衡二叉树的插入
+
+##### 思路
+
+二叉排序树递归加入节点完成后，回溯每个节点的平衡因子进行avl
+
+
+
+
+
+##### Java
+
+```java
+        /**
+         * 增加节点
+         *
+         * @param node
+         */
+        public void add(Node node) {
+            if (this.value >= node.value) {
+                if (this.left == null) {
+                    this.left = node;
+                } else {
+                    this.left.add(node);
+                }
+            } else {
+                if (this.right == null) {
+                    this.right = node;
+                } else {
+                    this.right.add(node);
+                }
+            }
+
+            this.avl();
+        }
+```
+
+##### Python
+
+```python
+```
+
+
+
+
+
+#### 平衡二叉树的删除
+
+##### 思路
+
+![](./img/046.png)
+
+
+
+删除节点后
+
+如果删除的是根节点，则删除后当前根节点直接进行alv
+
+如果删除的是非根节点，则删除后从当前父节点开始循环获取当前父节点的父节点，每个父节点都要进行avl
+
+##### Java
+
+
+
+```java
+        /**
+         * 删除节点
+         *
+         * @param value
+         */
+        public void delete(int value) {
+            if (root == null) {
+                return;
+            }
+            Node targetNode = search(value);
+            if (targetNode == null) {
+                return;
+            }
+            if (targetNode.equals(root)) {
+                //如果要找的是根节点，则直接把根节点置空
+                if (root.left == null && root.right == null) {
+                    root = null;
+                } else if (root.left == null) {
+                    //左边空，右边不空
+                    root = root.right;
+                } else if (root.right == null) {
+                    //右边空，左边不空
+                    root = root.left;
+                } else {
+                    //两边都不空
+                    /**
+                     * 查到最小的节点并将其删除
+                     */
+                    Node minNode = findMinAndDel(targetNode);
+
+                    //代替连接子节点
+                    minNode.left = targetNode.left;
+                    minNode.right = targetNode.right;
+
+                    root = minNode;
+                }
+                if (root != null) {
+                    root.avl();
+                }
+                return;
+            }
+            Node parentNode = searchParent(value);
+
+            if (targetNode.left == null && targetNode.right == null) {
+                /**
+                 * 1. 如果targetNode是叶子结点
+                 *     如果targetNode是parentNode的left节点,则parentNode.left = null
+                 *     否则targetNode是parentNode的right节点，则parentNode.right = null
+                 */
+                if (targetNode.equals(parentNode.left)) {
+                    parentNode.left = null;
+                } else {
+                    parentNode.right = null;
+                }
+            } else if (targetNode.left == null || targetNode.right == null) {
+                /**
+                 * 2. 如果targetNode有一个子节点，则targetNode的父节点与targetNode的子节点连接
+                 *     如果targetNode是parentNode的left节点
+                 *          如果targetNode有左子节点，则parentNode.left = targetNode.left
+                 *          否则parentNode.left = targetNode.right
+                 *     否则
+                 *          如果targetNode有左子节点，则parentNode.right = targetNode.left
+                 *          否则parentNode.right = targetNode.right
+                 */
+                if (targetNode.equals(parentNode.left)) {
+                    if (targetNode.left != null) {
+                        parentNode.left = targetNode.left;
+                    } else {
+                        parentNode.left = targetNode.right;
+                    }
+                } else {
+                    if (targetNode.left != null) {
+                        parentNode.right = targetNode.left;
+                    } else {
+                        parentNode.right = targetNode.right;
+                    }
+                }
+            } else {
+                /**
+                 * 3. 如果targetNode有两个子节点
+                 *     minNode = 从targetNode.right找最小的节点
+                 *     根据minNode找到其父节点minNodeParent,判断minNode是minNodeParent的左节点还是右节点，直接置空
+                 *     minNode.left = targetNode.left
+                 *     minNode.right = targetNode.right
+                 *     如果targetNode是parentNode的左节点
+                 *          则parentNode.left = minNode
+                 *     否则
+                 *          parentNode.right = minNode
+                 *
+                 */
+                Node minNode = findMinAndDel(targetNode);
+                //代替连接父节点
+                if (targetNode.equals(parentNode.left)) {
+                    parentNode.left = minNode;
+                } else {
+                    parentNode.right = minNode;
+                }
+                //代替连接子节点
+                minNode.left = targetNode.left;
+                minNode.right = targetNode.right;
+            }
+            while (parentNode != null) {
+                parentNode.avl();
+                parentNode = searchParent(parentNode.value);
+            }
+        }
+```
+
+##### Python
+
+```python
+
+```
+
+
+
+#### 完整代码
+##### Java
+
+```java
+package com.watermelon.tree;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+/**
+ * 二叉排序树
+ * 左<=根<=右
+ */
+public class A09AVLTree {
+    public static void main(String[] args) {
+        AVLTree tree = new AVLTree();
+        List<Node> nodes = Arrays.asList(7, 3, 9, 2, 5, 8, 1, 4, 6)
+                .stream()
+                .map(number -> new Node(number))
+                .collect(Collectors.toList());
+        nodes.forEach(tree::add);
+        tree.infixOrder();
+        System.out.println("-----------");
+        tree.delete(8);
+        tree.infixOrder();
+//        tree.infixOrder();
+
+//        for (int i = 1; i <= 100; i++) {
+//            tree.delete(i);
+//            tree.infixOrder();
+//            System.out.println("------------");
+//        }
+    }
+
+    public static class AVLTree {
+        private Node root;
+
+        /**
+         * 加入节点
+         *
+         * @param node
+         */
+        public void add(Node node) {
+            if (root == null) {
+                root = node;
+            } else {
+                root.add(node);
+            }
+        }
+
+        public void infixOrder() {
+            if (root == null) {
+                return;
+            }
+            root.infixOrder();
+        }
+
+        public Node search(int value) {
+            if (root == null) {
+                return null;
+            } else {
+                return root.search(value);
+            }
+        }
+
+        public Node searchParent(int value) {
+            if (root == null) {
+                return null;
+            } else {
+                if (root.value == value) {
+                    return null;
+                }
+                return root.searchParent(value);
+            }
+        }
+
+        /**
+         * 删除节点
+         *
+         * @param value
+         */
+        public void delete(int value) {
+            if (root == null) {
+                return;
+            }
+            Node targetNode = search(value);
+            if (targetNode == null) {
+                return;
+            }
+            if (targetNode.equals(root)) {
+                //如果要找的是根节点，则直接把根节点置空
+                if (root.left == null && root.right == null) {
+                    root = null;
+                } else if (root.left == null) {
+                    //左边空，右边不空
+                    root = root.right;
+                } else if (root.right == null) {
+                    //右边空，左边不空
+                    root = root.left;
+                } else {
+                    //两边都不空
+                    /**
+                     * 查到最小的节点并将其删除
+                     */
+                    Node minNode = findMinAndDel(targetNode);
+
+                    //代替连接子节点
+                    minNode.left = targetNode.left;
+                    minNode.right = targetNode.right;
+
+                    root = minNode;
+                }
+                if (root != null) {
+                    root.avl();
+                }
+                return;
+            }
+            Node parentNode = searchParent(value);
+
+            if (targetNode.left == null && targetNode.right == null) {
+                /**
+                 * 1. 如果targetNode是叶子结点
+                 *     如果targetNode是parentNode的left节点,则parentNode.left = null
+                 *     否则targetNode是parentNode的right节点，则parentNode.right = null
+                 */
+                if (targetNode.equals(parentNode.left)) {
+                    parentNode.left = null;
+                } else {
+                    parentNode.right = null;
+                }
+            } else if (targetNode.left == null || targetNode.right == null) {
+                /**
+                 * 2. 如果targetNode有一个子节点，则targetNode的父节点与targetNode的子节点连接
+                 *     如果targetNode是parentNode的left节点
+                 *          如果targetNode有左子节点，则parentNode.left = targetNode.left
+                 *          否则parentNode.left = targetNode.right
+                 *     否则
+                 *          如果targetNode有左子节点，则parentNode.right = targetNode.left
+                 *          否则parentNode.right = targetNode.right
+                 */
+                if (targetNode.equals(parentNode.left)) {
+                    if (targetNode.left != null) {
+                        parentNode.left = targetNode.left;
+                    } else {
+                        parentNode.left = targetNode.right;
+                    }
+                } else {
+                    if (targetNode.left != null) {
+                        parentNode.right = targetNode.left;
+                    } else {
+                        parentNode.right = targetNode.right;
+                    }
+                }
+            } else {
+                /**
+                 * 3. 如果targetNode有两个子节点
+                 *     minNode = 从targetNode.right找最小的节点
+                 *     根据minNode找到其父节点minNodeParent,判断minNode是minNodeParent的左节点还是右节点，直接置空
+                 *     minNode.left = targetNode.left
+                 *     minNode.right = targetNode.right
+                 *     如果targetNode是parentNode的左节点
+                 *          则parentNode.left = minNode
+                 *     否则
+                 *          parentNode.right = minNode
+                 *
+                 */
+                Node minNode = findMinAndDel(targetNode);
+                //代替连接父节点
+                if (targetNode.equals(parentNode.left)) {
+                    parentNode.left = minNode;
+                } else {
+                    parentNode.right = minNode;
+                }
+                //代替连接子节点
+                minNode.left = targetNode.left;
+                minNode.right = targetNode.right;
+            }
+            while (parentNode != null) {
+                parentNode.avl();
+                parentNode = searchParent(parentNode.value);
+            }
+        }
+
+        private Node findMinAndDel(Node targetNode) {
+            Node minNode = targetNode.right.findMinNode();
+            delete(minNode.value);
+            return minNode;
+        }
+    }
+
+    public static class Node {
+        private int value;
+        private Node left;
+        private Node right;
+
+        public Node(int value) {
+            this.value = value;
+        }
+
+        public Node getLeft() {
+            return left;
+        }
+
+        public void setLeft(Node left) {
+            this.left = left;
+        }
+
+        public Node getRight() {
+            return right;
+        }
+
+        public void setRight(Node right) {
+            this.right = right;
+        }
+
+        @Override
+        public String toString() {
+            return "Node{" +
+                    "value=" + value +
+                    '}';
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Node node = (Node) o;
+            return value == node.value;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(value);
+        }
+
+        public Node search(int value) {
+            if (this.value == value) {
+                return this;
+            } else if (this.value < value) {
+                if (this.right != null) {
+                    return this.right.search(value);
+                }
+                return null;
+            } else {
+                if (this.left != null) {
+                    return this.left.search(value);
+                }
+                return null;
+            }
+        }
+
+        public Node searchParent(int value) {
+            boolean leftEquals = this.left != null && this.left.value == value;
+            boolean rightEquals = this.right != null && this.right.value == value;
+            if (leftEquals || rightEquals) {
+                return this;
+            } else if (this.value < value) {
+                if (this.right != null) {
+                    return this.right.searchParent(value);
+                }
+            } else {
+                if (this.left != null) {
+                    return this.left.searchParent(value);
+                }
+            }
+            return null;
+        }
+
+        /**
+         * 增加节点
+         *
+         * @param node
+         */
+        public void add(Node node) {
+            if (this.value >= node.value) {
+                if (this.left == null) {
+                    this.left = node;
+                } else {
+                    this.left.add(node);
+                }
+            } else {
+                if (this.right == null) {
+                    this.right = node;
+                } else {
+                    this.right.add(node);
+                }
+            }
+
+            this.avl();
+        }
+        
+
+        /**
+         * 平衡当前二叉树
+         * 当前平衡因子是2 L,x
+         *  当前左孩子的平衡因子为-1，则左孩子先左旋，当前节点再右旋 L,R
+         *  否则直接右旋 LL
+         * 当前平衡因子是-2 R,x
+         *  当前右孩子的平衡因子为1，则右孩子先右旋，当前节点再左旋  R,L
+         *  否则直接左旋 RR
+         */
+        private void avl() {
+            int balance = this.leftHeight() - this.rightHeight();
+            if (balance == -2) {
+                if (this.right != null) {
+                    int childrenBalance = this.right.leftHeight() - this.right.rightHeight();
+                    /**
+                     * RR是左旋，平衡因子为-2，右孩子平衡因子-1
+                     * RL:先右旋，再左旋
+                     */
+                    if (childrenBalance == 1) {
+                        //RL:先右旋，再左旋
+                        this.right.rightRotate();
+                    }
+                    this.leftRotate();
+                }
+            } else if (balance == 2) {
+                if (this.left != null) {
+                    int childrenBalance = this.left.leftHeight() - this.left.rightHeight();
+                    if (childrenBalance == -1) {
+                        //LR是左旋，平衡因子为2，左孩子平衡因子-1
+                        this.left.leftRotate();
+                    }
+                    this.rightRotate();
+                }
+            }
+        }
+
+        /**
+         * 当前节点左子树高度
+         *
+         * @return
+         */
+        public int leftHeight() {
+            if (this.left == null) {
+                return 0;
+            }
+            return this.left.height() + 1;
+        }
+
+        /**
+         * 当前节点右子树高度
+         *
+         * @return
+         */
+        public int rightHeight() {
+            if (this.right == null) {
+                return 0;
+            }
+            return this.right.height() + 1;
+        }
+
+        /**
+         * 当前节点的高度
+         * 叶子结点回溯返回0，非叶子结点回溯时，返回更大的高度+1
+         *
+         * @return
+         */
+        public int height() {
+            // 如果当前节点为叶子节点（即没有左子树和右子树），则返回高度为0
+            if (this.left == null && this.right == null) {
+                return 0;
+            }
+
+            // 计算左子树的高度
+            int leftHeight = 0;
+            if (this.left != null) {
+                leftHeight = this.left.height();
+            }
+
+            // 计算右子树的高度
+            int rightHeight = 0;
+            if (this.right != null) {
+                rightHeight = this.right.height();
+            }
+            // 返回左右子树中较大的高度加上当前节点的高度（1）
+            if (leftHeight >= rightHeight) {
+                return leftHeight + 1;
+            } else {
+                return rightHeight + 1;
+            }
+        }
+
+        /**
+         * 针对LL型节点
+         * 给当前节点右旋
+         */
+        private void rightRotate() {
+            /**
+             *  1. 给当前节点创建个副本new_node
+             *   new_node的右节点指向当前节点右节点
+             *   new_node的左节点指向当前节点左节点的右节点
+             *  2. 将当前节点的左节点上移
+             *   this.value = this.left.value
+             *   this.left = this.left.left
+             *  3. 将当前节点的右节点指向new_node
+             *   this.right = new_node
+             */
+            Node newNode = new Node(this.value);
+            newNode.right = this.right;
+            newNode.left = this.left.right;
+
+            this.value = this.left.value;
+            this.left = this.left.left;
+
+            this.right = newNode;
+        }
+
+        /**
+         * 针对RR型节点
+         * 给当前节点左旋
+         */
+        public void leftRotate() {
+            /**
+             * 1. 创建当前节点副本new_node
+             *    new_node.left = this.left
+             *    new_node.right = this.right.left
+             * 2. 将右节点向上提(this = this.right)
+             *    由于java是没法直接将this的指向，所以
+             *    将this.right的内容value放到this中，也就是this.value = this.right.value
+             *    this.right = this.right.right
+             *    此时右节点就相当于this了
+             * 3. this(右节点)的左指针指向new_node
+             *    this.left = new_node
+             */
+            Node newNode = new Node(this.value);
+            newNode.left = this.left;
+            newNode.right = this.right.left;
+
+            this.value = this.right.value;
+            this.right = this.right.right;
+
+            this.left = newNode;
+        }
+
+
+        public void infixOrder() {
+            infixOrder(this);
+        }
+
+        /**
+         * 中序遍历
+         */
+        private static void infixOrder(Node node) {
+            if (node.left != null) {
+                infixOrder(node.left);
+            }
+            System.out.println(node);
+            if (node.right != null) {
+                infixOrder(node.right);
+            }
+        }
+
+        /**
+         * 获取当前排序二叉树中最小的节点
+         * 最小的值肯定在当前节点的左子树
+         * 如果当前节点没有左子树，则当前节点就是最小的节点
+         *
+         * @return
+         */
+        public Node findMinNode() {
+            if (this.left == null && this.right == null) {
+                return this;
+            }
+            if (this.left != null) {
+                Node result = this.left.findMinNode();
+                if (result != null) {
+                    return result;
+                }
+            }
+            return this;
+        }
+    }
+}
+```
+
+
+
+
+##### Python
+
+```python
+```
+
+
+
+## 2-3-4树
+
+### 定义
+
+
+
+2-3-4树是四阶的 B树(Balance Tree)，他属于一种多路查找树，它的结构有以下限制:
+
+* 所有叶子节点都拥有**相同的深度**。 节点只能是 2-节点、3-节点、4-节点之一。
+
+	* 2-节点:包含 1 个元素的节点，必须要有 2 个子节点，如果没有，则子节点内容用null表示;
+	
+	* 3-节点:包含 2 个元素的节点，必须要有 3 个子节点，如果没有，则子节点内容用null表示;
+	
+	* 4-节点:包含 3 个元素的节点，必须要有4 个子节点，如果没有，则子节点内容用null表示;
+	
+	* 所有节点必须至少包含1个元素，如果没有，则子节点内容用null表示;
+	
+	* 元素始终保持排序顺序，整体上保持二叉查找树的性质，即父结点大于左子结点，小于右子结点;
+	
+	   而且结点有多个元素时，每个元素必须大于它左边的和它的左子树中元素。
+
+
+下图是一个典型的 2-3-4树(来自维基百科):
+
+![](./img/047.png)
+
+根据上面的定义
+
+* 2-节点有:
+
+​	[5] ,[3] ,[4] ,[6] ,[8]
+
+​	其中[4] ,[6] ,[8]中每个节点都指向两个空的子节点
+
+* 3-节点有:
+
+​	[1,2] ,[7,9]
+
+​	其中[1,2]会指向3个空的子节点
+
+* 4-节点有:
+
+​	[10,11,12]
+
+​	它会指向4个空的子节点
+
+
+
+234树同一节点不同元素内部其实是有指针的，但是这个指针没有严格规定谁指向谁。
+
+2-3-4树的查询操作像普通的二叉搜索树一样，非常简单，但由于其结点元素数不确定，在一些编程语 言中实现起来并不方便，实现一般使用它的等同——红黑树
+
+
+
+### 234树与红黑树的等价关系
+
+2节点黑色
+
+![](./img/048.png)
+
+3节点上黑下红
+
+![](./img/049.png)
+
+
+
+4节点中间黑两边红
+
+![](./img/050.png)
+
+
+
+红黑树新增，一定是红色新增进来
+
+![](./img/051.png)
+
+
+
+
+
+
+
+## 红黑树
+
+### 概念
+
+红黑树来源于234树，红黑树的本质就是234树，234树与红黑树是一对多的关系。
+
+红黑树是一种节点带有颜色属性的二叉排序树，但他在二叉排序树之外，还有以下5大性质
+
+* 节点是红色或黑色
+
+* 根是黑色
+
+  *因为234树只有2节点，3节点，4节点，其对应红黑树的关系肯定是上黑下红，根结点在最上，所以肯定是黑色*
+
+* 所有叶子节点都是黑色(叶子肯定是NIL节点(也就是空节点)，这类节点不可以忽视，否则代码会看不懂)
+
+  *叶子结点肯定是NIL节点，NIL节点肯定是黑色*
+
+* 每个红色节点必须有两个黑色的子节点。(从每个叶子到根的所有路径上不能有两个连续的红色节点)
+
+  ```text
+上面已经说过，红黑树和234树等价，则一个节点下面的子树即是红黑树，也是234树
+  假设，取红节点下面的子树，我们先把这个子树等价的看成234树
+如果这个子树对应的234树是:
+  2节点: 2节点转红黑树肯定是黑色
+3节点: 3节点转红黑树不管是左倾还是右倾上面的节点肯定是黑色
+  4节点: 4节点转红黑树上面的节点肯定是黑色
+所以，红节点下面的234树不管是哪种类型，变成红黑树后，肯定上面是黑节点，也就是说红节点下面的肯定是黑节点
+  ```
+
+* 从任一 节点到其每个叶子的所有简单路径都包含相同数目的黑色节点(黑色平衡)。
+
+  ```text
+  由于红黑树和234树等价，由于234树具有相同的深度，而在234树的节点中，节点转红黑树，肯定有且仅有一个黑色结点，则从234树的特点可以看出，每条路径的黑色节点个数都为234树的深度+1，所以不管怎么转红黑树，每条路径的黑色节点都是234树的深度+1,则黑色平衡成立
+  ```
+
+
+
+根据上面的概念我们还可以推导出
+
+所有234树转红黑树时，如果有右子节点，红黑树的右子节点肯定是红色
+
+
+
+### 红黑树的操作
+
+**变色**: 节点的颜色由黑变红或者由红变黑
+
+**左旋**: 与平衡二叉树的旋转一致，要旋转的节点以右子节点作为支点向左旋转，左旋时冲突的左孩变右孩
+
+**右旋**: 与平衡二叉树的旋转一致，要旋转的节点以左子节点作为支点向右旋转，右旋时冲突的右孩变左孩
+
+
+
+
+### 为什么会有红黑树
+
+因为AVL树的插入和删除都要经过非常多的旋转，而红黑树旋转次数则相对较少。
+
+Java8中HashMap的实现因为用红黑树代替链表(链表长度大于8时)，性能有所提升
+
+
+
+
+
+
+
+
 

@@ -9,19 +9,20 @@ import java.util.stream.Collectors;
  * 二叉排序树
  * 左<=根<=右
  */
-public class A08BinarySortTree {
+public class A09AVLTree {
     public static void main(String[] args) {
-        BinarySortTree tree = new BinarySortTree();
-        List<Node> nodes = Arrays.asList(0, 10, 5, 20, 25)
+        AVLTree tree = new AVLTree();
+        List<Node> nodes = Arrays.asList(7, 3, 9, 2, 5, 8, 1, 4, 6)
                 .stream()
                 .map(number -> new Node(number))
                 .collect(Collectors.toList());
         nodes.forEach(tree::add);
         tree.infixOrder();
         System.out.println("-----------");
-
-        tree.delete(10);
+        tree.delete(8);
         tree.infixOrder();
+//        tree.infixOrder();
+
 //        for (int i = 1; i <= 100; i++) {
 //            tree.delete(i);
 //            tree.infixOrder();
@@ -29,9 +30,14 @@ public class A08BinarySortTree {
 //        }
     }
 
-    public static class BinarySortTree {
+    public static class AVLTree {
         private Node root;
 
+        /**
+         * 加入节点
+         *
+         * @param node
+         */
         public void add(Node node) {
             if (root == null) {
                 root = node;
@@ -66,6 +72,11 @@ public class A08BinarySortTree {
             }
         }
 
+        /**
+         * 删除节点
+         *
+         * @param value
+         */
         public void delete(int value) {
             if (root == null) {
                 return;
@@ -78,15 +89,12 @@ public class A08BinarySortTree {
                 //如果要找的是根节点，则直接把根节点置空
                 if (root.left == null && root.right == null) {
                     root = null;
-                    return;
                 } else if (root.left == null) {
                     //左边空，右边不空
                     root = root.right;
-                    return;
                 } else if (root.right == null) {
                     //右边空，左边不空
                     root = root.left;
-                    return;
                 } else {
                     //两边都不空
                     /**
@@ -99,8 +107,11 @@ public class A08BinarySortTree {
                     minNode.right = targetNode.right;
 
                     root = minNode;
-                    return;
                 }
+                if (root != null) {
+                    root.avl();
+                }
+                return;
             }
             Node parentNode = searchParent(value);
 
@@ -162,25 +173,17 @@ public class A08BinarySortTree {
                 minNode.left = targetNode.left;
                 minNode.right = targetNode.right;
             }
-        }
-
-        private Node findMinAndDel1(Node targetNode) {
-            Node minNode = targetNode.right.findMinNode();
-            delete(minNode.value);
-            return minNode;
+            while (parentNode != null) {
+                parentNode.avl();
+                parentNode = searchParent(parentNode.value);
+            }
         }
 
         private Node findMinAndDel(Node targetNode) {
             Node minNode = targetNode.right.findMinNode();
-            Node minNodeParent = this.searchParent(minNode.value);
-            if (minNode.equals(minNodeParent.left)) {
-                minNodeParent.left = null;
-            } else {
-                minNodeParent.right = minNodeParent.right.right;
-            }
+            delete(minNode.value);
             return minNode;
         }
-
     }
 
     public static class Node {
@@ -267,7 +270,7 @@ public class A08BinarySortTree {
          * @param node
          */
         public void add(Node node) {
-            if (node.value <= this.value) {
+            if (this.value >= node.value) {
                 if (this.left == null) {
                     this.left = node;
                 } else {
@@ -280,6 +283,152 @@ public class A08BinarySortTree {
                     this.right.add(node);
                 }
             }
+
+            this.avl();
+        }
+
+
+        /**
+         * 平衡当前二叉树
+         * 当前平衡因子是2 L,x
+         *  当前左孩子的平衡因子为-1，则左孩子先左旋，当前节点再右旋 L,R
+         *  否则直接右旋 LL
+         * 当前平衡因子是-2 R,x
+         *  当前右孩子的平衡因子为1，则右孩子先右旋，当前节点再左旋  R,L
+         *  否则直接左旋 RR
+         */
+        private void avl() {
+            int balance = this.leftHeight() - this.rightHeight();
+            if (balance == -2) {
+                if (this.right != null) {
+                    int childrenBalance = this.right.leftHeight() - this.right.rightHeight();
+                    /**
+                     * RR是左旋，平衡因子为-2，右孩子平衡因子-1
+                     * RL:先右旋，再左旋
+                     */
+                    if (childrenBalance == 1) {
+                        //RL:先右旋，再左旋
+                        this.right.rightRotate();
+                    }
+                    this.leftRotate();
+                }
+            } else if (balance == 2) {
+                if (this.left != null) {
+                    int childrenBalance = this.left.leftHeight() - this.left.rightHeight();
+                    if (childrenBalance == -1) {
+                        //LR是左旋，平衡因子为2，左孩子平衡因子-1
+                        this.left.leftRotate();
+                    }
+                    this.rightRotate();
+                }
+            }
+        }
+
+        /**
+         * 当前节点左子树高度
+         *
+         * @return
+         */
+        public int leftHeight() {
+            if (this.left == null) {
+                return 0;
+            }
+            return this.left.height() + 1;
+        }
+
+        /**
+         * 当前节点右子树高度
+         *
+         * @return
+         */
+        public int rightHeight() {
+            if (this.right == null) {
+                return 0;
+            }
+            return this.right.height() + 1;
+        }
+
+        /**
+         * 当前节点的高度
+         * 叶子结点回溯返回0，非叶子结点回溯时，返回更大的高度+1
+         *
+         * @return
+         */
+        public int height() {
+            // 如果当前节点为叶子节点（即没有左子树和右子树），则返回高度为0
+            if (this.left == null && this.right == null) {
+                return 0;
+            }
+
+            // 计算左子树的高度
+            int leftHeight = 0;
+            if (this.left != null) {
+                leftHeight = this.left.height();
+            }
+
+            // 计算右子树的高度
+            int rightHeight = 0;
+            if (this.right != null) {
+                rightHeight = this.right.height();
+            }
+            // 返回左右子树中较大的高度加上当前节点的高度（1）
+            if (leftHeight >= rightHeight) {
+                return leftHeight + 1;
+            } else {
+                return rightHeight + 1;
+            }
+        }
+
+        /**
+         * 针对LL型节点
+         * 给当前节点右旋
+         */
+        private void rightRotate() {
+            /**
+             *  1. 给当前节点创建个副本new_node
+             *   new_node的右节点指向当前节点右节点
+             *   new_node的左节点指向当前节点左节点的右节点
+             *  2. 将当前节点的左节点上移
+             *   this.value = this.left.value
+             *   this.left = this.left.left
+             *  3. 将当前节点的右节点指向new_node
+             *   this.right = new_node
+             */
+            Node newNode = new Node(this.value);
+            newNode.right = this.right;
+            newNode.left = this.left.right;
+
+            this.value = this.left.value;
+            this.left = this.left.left;
+
+            this.right = newNode;
+        }
+
+        /**
+         * 针对RR型节点
+         * 给当前节点左旋
+         */
+        public void leftRotate() {
+            /**
+             * 1. 创建当前节点副本new_node
+             *    new_node.left = this.left
+             *    new_node.right = this.right.left
+             * 2. 将右节点向上提(this = this.right)
+             *    由于java是没法直接将this的指向，所以
+             *    将this.right的内容value放到this中，也就是this.value = this.right.value
+             *    this.right = this.right.right
+             *    此时右节点就相当于this了
+             * 3. this(右节点)的左指针指向new_node
+             *    this.left = new_node
+             */
+            Node newNode = new Node(this.value);
+            newNode.left = this.left;
+            newNode.right = this.right.left;
+
+            this.value = this.right.value;
+            this.right = this.right.right;
+
+            this.left = newNode;
         }
 
 
