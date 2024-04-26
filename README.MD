@@ -834,6 +834,8 @@ public static void main(String[] args) {
 
 
 
+
+
 ### 前序遍历
 
 遍历顺序：根左右
@@ -1004,6 +1006,12 @@ class HeroNode {
 
 ```python
 ```
+
+
+
+总结:
+
+在不使用辅助变量，辅助指针的情况下，最好借助递归的思想进行前中后序遍历
 
 
 
@@ -1705,6 +1713,18 @@ n 个节点的二叉树链表中含有 `n + 1` 个空指针域，他的推导公
 
 #### 思路
 
+![](./img/065.png)
+
+1. 由于当前二叉树是没有parent指针的，所以，我们需要使用个变量记住上一个节点
+
+2. 什么时候记录上一个节点
+
+   中序遍历回溯到当前节点时，就要记录当前节点为上一个节点
+
+   
+
+
+
 主要还是利用递归中序遍历的思想
 
 先直接递归遍历到最左边的节点
@@ -1719,52 +1739,6 @@ n 个节点的二叉树链表中含有 `n + 1` 个空指针域，他的推导公
 #### Java
 
 ```java
-package com.watermelon.tree;
-
-
-/**
- * 线索化二叉树
- */
-public class A05ThreadedBinaryTree {
-    public static void main(String[] args) {
-        HeroNode n1 = new HeroNode(1, "张三");
-        HeroNode n3 = new HeroNode(3, "李四");
-        HeroNode n6 = new HeroNode(6, "王老五");
-        HeroNode n8 = new HeroNode(8, "老六");
-        HeroNode n10 = new HeroNode(10, "朱");
-        HeroNode n14 = new HeroNode(14, "赵四");
-        n1.setLeft(n3);
-        n1.setRight(n6);
-        n3.setLeft(n8);
-        n3.setRight(n10);
-        n6.setLeft(n14);
-        ThreadedBinaryTree tree = new ThreadedBinaryTree(n1);
-        tree.preThreadedNodes();
-        tree.preOrder();
-        //8,3,10,1,14,6
-//        System.out.printf("当前节点:%d,左节点:%d,右节点:%d\n", node4.id, node4.left.id, node4.right.id);
-        System.out.printf("当前节点:%d,左节点:%d,右节点:%d\n", n10.id, n10.left.id, n10.right.id);
-        System.out.printf("当前节点:%d,左节点:%d,右节点:%d\n", n14.id, n14.left.id, n14.right);
-
-        System.out.printf("当前节点:%d,左节点:%d,右节点:%d\n", n6.id, n6.left.id, n6.right.id);
-//        tree.preOrder();
-    }
-
-    public static class ThreadedBinaryTree {
-        private HeroNode root;
-        private HeroNode pre;
-
-        public ThreadedBinaryTree(HeroNode root) {
-            this.root = root;
-        }
-
-        public void infixThreadedNodes() {
-            this.infixThreadedNodes(this.root);
-        }
-
-        public void preThreadedNodes() {
-            this.preThreadedNodes(this.root);
-        }
 
         /**
          * 线索化二叉树
@@ -1796,7 +1770,6 @@ public class A05ThreadedBinaryTree {
             infixThreadedNodes(node.right);
         }
 
-    }
 
     public static class HeroNode {
         private int id;
@@ -1825,6 +1798,22 @@ public class A05ThreadedBinaryTree {
 #### Python
 
 ```python
+    def _infix_threaded(self, node):
+
+        if node.left is not None:
+            self._infix_threaded(node.left)
+        else:
+            node.left = self._pre_node
+            node.left_type = 1
+
+        if self._pre_node is not None:
+            if self._pre_node.right is None:
+                self._pre_node.right = node
+                self._pre_node.right_type = 1
+
+        self._pre_node = node
+        if node.right is not None:
+            self._infix_threaded(node.right)
 ```
 
 
@@ -1837,7 +1826,7 @@ public class A05ThreadedBinaryTree {
 
 先遍历左边到左边的结尾，中途不打印，到结尾再打印
 
-然后遍历后续指针指向的节点，要打印
+然后遍历后继指针指向的节点，要打印
 
 最后将当前节点设置为迭代的节点，循环上面的步骤
 
@@ -3150,8 +3139,9 @@ public class HuffmanCompressRelease {
          min_node.right = target_node.right
          ```
    
-         
-   
+      
+      简单来说，就是用被删除节点的前驱节点或者后继节点代替被删除的节点，但是要注意的是，被删除的前驱节点或者后继节点也要从原本的位置删除
+      
       
 
 **代码思路**
@@ -3722,26 +3712,19 @@ main()
 
 #### 思路
 
-有两种思路:
-
-一.通过调用删除方法递归的删除
-
-1. 先用递归的方式去右子树中找出最小的节点
-2. 再用递归的方式调用删除方法将其删除
-
-注意：虽然这里调用了delete，delete也调用了findMinAndDel,但是delete中一定会递归到一个叶子结点，然后向上补充
+右子树的最小节点，要么是当前节点的右节点，要么是右子树最左边的节点
 
 
 
-二. 通过改变被删节父节点指针的方法删除
+通过改变被删节点父节点指针的方法删除
 
 1. 先用递归的方式去右子树中找出最小的节点min_node
 
-2. 如果被查找的节点min_node是该节点父节点的左子节点，则父节点的左子节点设置为null
+2. 如果被查找的节点min_node是该节点父节点的左子节点，则父节点的左子节点设置为最小节点的右节点
 
    ```java
-   if (minNode.equals(minNodeParent.left)) {
-                   minNodeParent.left = null;
+   if (minNode.equals(minParentNode.left)) {
+        minParentNode.left = minParentNode.left.right;
    }
    ```
 
@@ -3753,12 +3736,29 @@ main()
 
 #### Java
 
-思路1:
-
 ```java
+        /**
+         * 查找右子树最节点并将其删除
+         *
+         * @param targetNode
+         * @return
+         */
         private Node findMinAndDel(Node targetNode) {
+            /**
+             * 删除节点
+             * 最小节点只可能有两种情况
+             * 1.在右子树的最左节点
+             *    这种情况，将最小节点的父节点指向最小节点的右节点即可
+             * 2.在要删除节点的右子节点
+             *    这种情况，将最小节点的父节点直接指向最小节点的右子节点即可
+             */
             Node minNode = targetNode.right.findMinNode();
-            delete(minNode.value);
+            Node minParentNode = searchParent(minNode.value);
+            if (minNode.equals(minParentNode.left)) {
+                minParentNode.left = minParentNode.left.right;
+            } else {
+                minParentNode.right = minParentNode.right.right;
+            }
             return minNode;
         }
 
@@ -3780,21 +3780,6 @@ main()
                 }
             }
             return this;
-        }
-```
-
-思路2:
-
-```java
-        private Node findMinAndDel(Node targetNode) {
-            Node minNode = targetNode.right.findMinNode();
-            Node minNodeParent = this.searchParent(minNode.value);
-            if (minNode.equals(minNodeParent.left)) {
-                minNodeParent.left = null;
-            } else {
-                minNodeParent.right = minNodeParent.right.right;
-            }
-            return minNode;
         }
 ```
 
@@ -4356,9 +4341,21 @@ RL型失衡特点:
 
 删除节点后
 
-如果删除的是根节点，则删除后当前根节点直接进行alv
+删除节点，使用的思路是二叉排序树重新连接节点的方式
+
+如果删除的是根节点，则删除后当前根节点直接进行avl
+
+​	因为原本是平衡的，再删除，也只可能当前节点的平衡因子绝对值等于2
 
 如果删除的是非根节点，则删除后从当前父节点开始循环获取当前父节点的父节点，每个父节点都要进行avl
+
+
+
+删除时
+
+如果当前节点的平衡因子是2，则代表是L[x]，则下一个要找的子节点一定是左子节点
+
+如果当前节点的平衡因子是-2，则代表是R[x]，则下一个要找的子节点一定是右子节点
 
 ##### Java
 
@@ -4973,8 +4970,6 @@ public class A09AVLTree {
 
 ### 定义
 
-
-
 2-3-4树是四阶的 B树(Balance Tree)，他属于一种多路查找树，它的结构有以下限制:
 
 * 所有叶子节点都拥有**相同的深度**。 节点只能是 2-节点、3-节点、4-节点之一。
@@ -5020,9 +5015,68 @@ public class A09AVLTree {
 
 234树同一节点不同元素内部其实是有指针的，但是这个指针没有严格规定谁指向谁。
 
-2-3-4树的查询操作像普通的二叉搜索树一样，非常简单，但由于其结点元素数不确定，在一些编程语 言中实现起来并不方便，实现一般使用它的等同——红黑树
+2-3-4树的查询操作像普通的二叉搜索树一样，非常简单，但由于其结点元素数不确定，在一些编程语 言中实现起来并不方便，实现一般使用它的等同-->红黑树
 
 
+
+### 234树与二叉树的等价关系
+
+![](./img/061.png)
+
+
+
+### 将234树转二叉树
+
+根据上面的等价关系可知
+
+1. 如果234树是2节点，则转二叉树时，无需转换
+
+   ![](./img/062.png)
+
+2. 如果234树是3节点，则转二叉树时，有两种转换方案
+
+   ![](./img/063.png)
+
+   方案1:
+
+   ```text
+   8的右节点为10，在三节点裂变时已经确定
+   8的左节点为6，在2-3-4树时已经确定
+   10的右节点为12，在2-3-4树时已经确定
+   但是9在2-3-4树时，既是8的右节点，又是10的左节点，
+   但是8已经在裂变时右节点指向了10，所以在这里9仅剩10的左节点可选择了
+   ```
+
+   方案2:
+
+   ```text
+   这种情况:
+   8的右节点为10，在三节点裂变时已经确定
+   8的左节点为6，在2-3-4树时已经确定
+   10的右节点为12，在2-3-4树时已经确定
+   但是9在2-3-4树时，既是8的右节点，又是10的左节点，
+   但是10已经在裂变时左节点指向了8，所以在这里9仅剩8的右节点可选择了
+   ```
+
+   
+
+3. 如果234树是4节点，则转二叉树时，有一种转换方案
+
+   ![](./img/064.png)
+
+   转换方案:
+
+   ```text
+   8的右节点为10，左节点为6，在四节点节点裂变时已经确定
+   6的左节点为5，在2-3-4树时已经确定
+   10的右节点为12，在2-3-4树时已经确定
+   但是7在2-3-4树时，既是6的右节点，又是8的左节点，
+   但是8已经在裂变时左节点指向了6，所以在这里7仅剩6的右节点可选择了
+   9在2-3-4树时，既是8的右节点，又是10的左节点，
+   但是8已经在裂变时右节点指向了10，所以在这里9仅剩10的左节点可选择了
+   ```
+
+   
 
 ### 234树与红黑树的等价关系
 
@@ -5058,7 +5112,7 @@ public class A09AVLTree {
 
 红黑树来源于234树，红黑树的本质就是234树，234树与红黑树是一对多的关系。
 
-红黑树是一种节点带有颜色属性的二叉排序树，但他在二叉排序树之外，还有以下5大性质
+红黑树是一种节点带有颜色属性的平衡二叉树，但他在平衡二叉树之外，还有以下5大性质
 
 * 节点是红色或黑色
 
@@ -5096,14 +5150,11 @@ public class A09AVLTree {
 
 
 
-### 红黑树的操作
+红黑树的左右子树在最极端的情况下，高度相差1/2
 
-**变色**: 节点的颜色由黑变红或者由红变黑
+比如左边全部是黑节点
 
-**左旋**: 与平衡二叉树的旋转一致，要旋转的节点以右子节点作为支点向左旋转，左旋时冲突的左孩变右孩
-
-**右旋**: 与平衡二叉树的旋转一致，要旋转的节点以左子节点作为支点向右旋转，右旋时冲突的右孩变左孩
-
+右边每个黑节点间隔一个红节点
 
 
 
@@ -5115,9 +5166,689 @@ Java8中HashMap的实现因为用红黑树代替链表(链表长度大于8时)�
 
 
 
+### 红黑树的操作
+
+**变色**: 节点的颜色由黑变红或者由红变黑
+
+**左旋**: 与平衡二叉树的旋转一致，要旋转的节点以右子节点作为支点向左旋转，左旋时冲突的左孩变右孩
+
+**右旋**: 与平衡二叉树的旋转一致，要旋转的节点以左子节点作为支点向右旋转，右旋时冲突的右孩变左孩
 
 
 
+#### 左旋
+
+##### 思路
+
+红黑树的节点由于有parent指针，则可以不使用创建新node，移动支点 值的方式，这里可以使用改变指针的方式。
+
+步骤:
+
+![](./img/052.png)
+
+
+
+1. 确定支点r
+
+   ```java
+   r = p.right
+   ```
+
+2. 确定p的右节点
+
+   ```java
+   p.right = r.left
+   r.left.parent = p
+   ```
+
+3. 确定r的父节点
+
+   ```java
+   r.parent = p.parent
+   r.parent.left或者r.parent.right = r
+   ```
+
+4. 确定r的左节点
+
+   ```java
+   r.left = p
+   p.parent = r
+   ```
+
+
+
+##### 代码
+
+###### Java
+
+```java
+        /**
+         * 左旋
+         */
+        public void leftRotate(RBNode p) {
+            if (p != null) {
+                //1. 确定p.right为支点r
+                RBNode r = p.right;
+
+                //2. 处理p的右指针(冲突的左孩变友右孩)
+                p.right = r.left;
+                if (r.left != null) {
+                    r.left.parent = p;
+                }
+                //3. 处理r的父节点
+                r.parent = p.parent;
+                if (p.parent == null) {
+                    root = r;
+                } else if (p.parent.left == p) {
+                    p.parent.left = r;
+                } else {
+                    p.parent.right = r;
+                }
+                //4. 处理r的左指针
+                r.left = p;
+                p.parent = r;
+            }
+        }
+```
+
+###### Python
+
+```python
+```
+
+#### 右旋
+##### 思路
+
+![](./img/053.png)
+
+1. 确定支点l
+
+   ```java
+   l = p.left		
+   ```
+
+   
+
+2. 确定p的左节点
+
+   ```java
+   p.left = l.right
+   l.right.parent = p
+   ```
+
+   
+
+3. 确定l的父节点
+
+   ```java
+   l.parent = p.parent
+   p.parent.right或p.parent.left = l
+   ```
+
+   
+
+4. 确定l的右节点
+
+   ```java
+   l.right = p
+   p.parent = l
+   ```
+
+   
+
+##### 代码
+
+###### Java
+
+```java
+        /**
+         * 右旋
+         */
+        public void rightRotate(RBNode p) {
+            if (p != null) {
+                //1. 确定p.left为支点l
+                RBNode l = p.left;
+                //2. 处理p的左节点
+                p.left = l.right;
+                if (l.right != null) {
+                    l.right.parent = p;
+                }
+                //3. 处理l的父节点
+                l.parent = p.parent;
+                if (p.parent == null) {
+                    root = l;
+                } else if (p.parent.left == p) {
+                    p.parent.left = l;
+                } else {
+                    p.parent.right = l;
+                }
+                //4.处理l的右节点
+                l.right = p;
+                p.parent = l;
+            }
+        }
+    }
+```
+
+
+
+
+###### Python
+
+```python
+```
+
+
+
+#### 二叉树的插入
+
+##### 思路
+
+和 二叉排序树插入思路其实是一样的
+
+通过递归的方式，如果当前节点没有左节点，则直接加到左节点，否则左节点递归加入
+
+插入后再循环进行红黑树平衡调整
+
+##### 代码
+###### Java
+```java
+        /**
+         * 新增节点
+         *
+         * @param key
+         * @param value
+         */
+        public void put(K key, V value) {
+            RBNode t = this.root;
+
+            if (key == null) {
+                throw new NullPointerException("Empty key");
+            }
+            if (value == null) {
+                value = value == null ? (V) key : value;
+            }
+            /**
+             * 判断是否加入的是根节点
+             */
+            if (t == null) {
+                this.root = new RBNode(key, value, null);
+                return;
+            }
+            /**
+             * 判断加入的节点的位置
+             * 如果有一个已知节点key相同，则替换value
+             */
+            RBNode parent;
+            int cpr;
+            do {
+                parent = t;
+                cpr = key.compareTo((K) t.key);
+                if (cpr < 0) {
+                    t = t.left;
+                } else if (cpr > 0) {
+                    t = t.right;
+                } else {
+                    //存在key
+                    t.setValue(value);
+                    return;
+                }
+            } while (t != null);
+            RBNode<K, V> e = new RBNode<>(key, value, parent);
+            if (cpr < 0) {
+                parent.left = e;
+            } else {
+                parent.right = e;
+            }
+            fixAfterPut(e);
+        }
+```
+
+###### Python
+```python
+
+```
+
+
+
+#### 插入后调整节点
+
+##### 思路
+
+```text
+红黑树规则
+1. 红黑树插入时，如果节点还没有插入到树中，一定是红色的。
+2. 红黑树插入时，如果父节点是黑色，则不需要调整，直接插入，也就是说父节点是红色，一定要调整
+   因为新加入的节点一定是红色节点，而红黑树同一路线不能出现两个连续红色节点，则父节点是红色一定要调整
+3. 红黑树插入时变色，一定是参考234树与红黑树等价关系变色
+```
+
+
+
+红黑树的来源是根据 2-3-4 树，其中 2-3-4 树的节点可分为 2 节点、3 节点和 4 节点。因此，红黑树的父节点可以等价于 2 节点、3 节点和 4 节点，其中2节点加入新节点后转红黑树是没有爷爷节点的，3节点和4节点加入新节点转红黑树是有爷爷节点的。
+
+当**父节点是 2 节点**时，此时没有爷爷节点，父节点等价于一个节点的平衡的红黑树。根据 2-3-4 树与红黑树的关系，父节点只能有一种情况，加入子节点后有两种情况：
+
+![](./img/054.png)
+
+这两种情况属于无爷爷的情况，按照红黑树规则无需调整，所以数据插入后，无需考虑这两种情况
+
+下面我们开始讨论有爷爷节点的情况。
+
+先讨论父节点是爷爷的左节点情况，然后再讨论父节点是爷爷右节点的情况。
+
+
+
+**父节点是爷爷左节点:**
+
+当**父节点是 3 节点**时，父节点等价于平衡的两个节点的红黑树。根据 2-3-4 树与红黑树的关系，在父节点是爷爷左节点时，父节点(2节点)可分为一种情况，插入情况分两种：
+
+![](./img/055.png)
+
+
+
+  这种情况按照红黑树规则：
+
+* 情况 a：需要进行爷爷节点的右旋操作，然后按照等价关系变色，将父节点变为黑色，兄弟节点变为红色。
+
+  ​				也可以先变色，父节点变为黑色，爷爷节点变色红色，再右旋。
+
+* 情况 b：需要先对父节点进行左旋操作，并将原父节点变为子节点。然后按照情况 a 的操作，进行爷爷节点的右旋操作，最后按照等价关系变色，将父节点变为黑色，兄弟节点变为红色。
+
+当**父节点是 4 节点**时，父节点等价于平衡的三个节点的红黑树。根据 2-3-4 树与红黑树的关系，在父节点是爷爷的左节点时，父节点(3节点)可分为一种情况，插入情况分两种：
+
+![](./img/056.png)
+
+这种情况，按照红黑树规则
+
+* 情况c:不管上面哪种添加方式，都是父节点叔叔节点变黑，爷爷节点变红
+
+
+
+**父节点是爷爷右节点:**
+
+当**父节点是 3 节点**时，父节点等价于平衡的两个节点的红黑树。根据 2-3-4 树与红黑树的关系，在父节点是爷爷右节点时，父节点(2节点)可分为一种情况，插入情况分两种：
+
+![](./img/057.png)
+
+- 情况 a：需要进行爷爷节点的左旋操作，然后按照等价关系变色，将父节点变为黑色，兄弟节点变为红色。
+- 情况 b：需要先对父节点进行右旋操作，并将原父节点变为子节点。然后按照情况 a 的操作，进行爷爷节点的左旋操作，最后按照等价关系变色，将父节点变为黑色，兄弟节点变为红色。
+
+当**父节点是 4 节点**时，父节点等价于平衡的三个节点的红黑树。根据 2-3-4 树与红黑树的关系，在父节点是爷爷的左节点时，父节点(3节点)可分为一种情况，插入情况分两种：
+
+![](./img/058.png)
+
+
+
+这种情况，按照红黑树规则
+
+* 情况c:不管情况上面哪种添加方式，都是父节点变黑，爷爷节点变红
+
+
+
+**循环调整条件**
+
+由于父节点是2节点属于没有爷爷的节点，不需要调整
+
+所以插入节点的父节点值可能是3节点和4节点。
+
+如果插入节点的父节点是3节点，插入后会变成4节点，4节点等价的红黑树顶点一定是黑色，所以这个顶点肯定不会和顶点的父亲节点冲突，则不需要循环调整
+
+![](./img/059.png)
+
+
+
+如果插入节点的父节点是4节点，插入后会裂变，裂变的红黑树顶点一定是红色，但是我们无法保证这个顶点的父节点是否是红色，所以这种情况要循环调整
+
+![](./img/060.png)
+
+
+
+**根节点是黑色**
+
+由于循环调整时，会把顶点设置为红色，如果顶点是根节点，按照红黑树性质，根节点要变成黑色。
+
+
+
+##### 代码
+
+###### 代码思路
+
+  - 当没有爷爷节点时，不需要调整。
+
+  - 当父节点是红节点时，需要按照红黑树规则调整二叉树，要调整的有三节点和四节点共a,b,c三种情况。
+
+  - 父节点是红节点时有下面两种情况：
+    - 父节点是爷爷的左节点 
+      - 叔叔(爷爷的右节点)是红色(4节点)
+        
+         按照四节点插入规则变色
+         
+         再将爷爷节点设置为要调整的节点进行循环操作(4节点插入时要循环)
+         
+         ```java
+         x.parent.color = BLACK;
+         x.parent.parent.color = RED;
+         x.parent.parent.right.color = BLACK;
+         x = x.parent.parent
+         ```
+         
+      - 叔叔是黑色或者空(3节点)
+        
+         * 如果插入的是父亲的右节点，则当前节点换成父亲，当前节点左旋
+         
+           ```text
+           x = x.parent
+           leftRotate(x)
+           ```
+         
+         根据红黑树规则变色，爷爷节点右旋
+         
+         ```text
+         x.color = RED;
+         x.parent.color = BLACK;
+         x.parent.parent.color = RED;
+         rightRotate(x.parent.parent);
+         ```
+      
+    - 父节点是爷爷的右节点
+    
+    - - 叔叔(爷爷的左节点)是红色(4节点)
+    
+        按照四节点插入规则变色
+    
+        再将爷爷节点设置为要调整的节点进行循环操作(4节点插入时要循环)
+      
+        ```java
+        x.parent.color = BLACK;
+        x.parent.parent.color = RED;
+        x.parent.parent.left.color = BLACK;
+        x = x.parent.parent
+        ```
+      
+      - 叔叔是黑色或者空(3节点)
+      
+        * 如果插入的是父亲的左节点，则当前节点换成父亲，当前节点左旋
+      
+          ```text
+          x = x.parent
+          rightRotate(x)
+          ```
+      
+        根据红黑树规则变色，爷爷节点左旋
+      
+        ```text
+        x.color = RED;
+        x.parent.color = BLACK;
+        x.parent.parent.color = RED;
+        leftRotate(x.parent.parent);
+        ```
+    
+
+
+
+###### Java
+
+```java
+        /**
+         * 按照红黑树规则调整
+         * 包括旋转和变色
+         *
+         * @param x 要调整的节点
+         */
+        private void fixAfterPut(RBNode<K, V> x) {
+            x.color = RED;
+            /**
+             * 当前节点为空，当前节点是根节点，当前节点的父节点为黑色时不需要调整
+             */
+            while (x != null && x != root && parentOf(x).color == RED) {
+                /**
+                 * 当前节点是红色,爷爷节点肯定存在
+                 */
+                if (parentOf(x) == leftOf(parentOf(parentOf(x)))) {
+                    //当前父亲是左节点
+                    RBNode y = rightOf(parentOf(parentOf(x)));//叔叔节点
+                    if (colorOf(y) == RED) {
+                        //4节点
+                        setColor(parentOf(x), BLACK);
+                        setColor(y, BLACK);
+                        setColor(parentOf(parentOf(x)), RED);
+                        //爷爷是红的,爷爷的爸爸也可能是红的，则要向上递归操作
+                        x = parentOf(parentOf(x));
+                    } else {
+                        //3结点
+                        if (parentOf(x).right == x) {
+                            x = parentOf(x);
+                            leftRotate(x);
+                        }
+                        setColor(parentOf(x), BLACK);
+                        setColor(parentOf(parentOf(x)), RED);
+                        rightRotate(parentOf(parentOf(x)));
+                    }
+                } else {
+                    //当前父亲是右节点
+                    RBNode y = leftOf(parentOf(parentOf(x)));//叔叔节点
+                    if (colorOf(y) == RED) {
+                        //4节点
+                        setColor(parentOf(x), BLACK);
+                        setColor(y, BLACK);
+                        setColor(parentOf(parentOf(x)), RED);
+                        //爷爷是红的,爷爷的爸爸也可能是红的，则要向上递归操作
+                        x = parentOf(parentOf(x));
+                    } else {
+                        //3结点
+                        if (parentOf(x).left == x) {
+                            x = parentOf(x);
+                            rightRotate(x);
+                        }
+
+                        setColor(parentOf(x), BLACK);
+                        setColor(parentOf(parentOf(x)), RED);
+                        leftRotate(parentOf(parentOf(x)));
+                    }
+                }
+            }
+            /**
+             * 到这里就到根节点了，根节点一定是黑的
+             */
+            this.root.color = BLACK;
+        }
+```
+
+
+
+###### Python
+
+```python
+```
+
+
+
+
+
+##### 总结
+
+插入时，如果父节点是红色，就去看叔叔节点是不是红色。
+
+叔叔节点是红色，则直接父节点叔叔节点变黑，爷爷节点变红，再以爷爷节点为插入节点循环往上调整
+
+叔叔节点是黑色或者Null，则要旋转变色再旋转
+
+根节点一定要设置成黑色
+
+
+
+#### 查找前驱节点和后继节点
+
+##### 思路
+
+方法和二叉排序树章节的查找并删除二叉树右子树的最小节点一样，但是这里并不是去左子树或右子树中找，而是直接找一个节点的中序前驱节点，一个节点的中序后继节点
+
+这里只是查找，并不涉及删除，找到之后直接返回即可
+
+
+
+右子树的最小节点，要么是当前节点的右节点，要么是右子树最左边的节点
+
+* 查找前驱节点
+
+  如果这个节点有左子树
+
+  ​	如果左子树有右子节点，则循环的找到最右边的节点，这个节点就是前驱节点
+
+  ​	如果左子树没有右子节点，当前节点就是前驱节点
+
+  如果这个节点没有左子树
+
+  ​	在当前节点的直系祖先节点中，找到离自己最近且其右子节点是当前节点的祖先节点的祖先节点，这个祖先节点就是当前节点的前驱节点。
+
+  
+
+* 查找后继节点
+
+  如果这个节点有右子树
+
+  ​	如果右子树有左子节点，则循环的找到最左边的节点，这个节点就是后继节点
+
+  ​	如果右子树没有左子节点，则当前节点就是前驱节点
+
+  如果这个节点没有右子树
+
+  ​	在当前节点的直系祖先节点中，找到离自己最近且其左子结点是当前节点的祖先节点的组件节点，这个祖先节点就是当前节点的后继节点
+
+  
+
+##### 代码
+
+###### Java
+
+```java
+        /**
+         * 获取当前节点的前驱节点
+         *
+         * @return
+         */
+        private RBNode<K, V> predecessor(RBNode<K, V> node) {
+            if (node == null) {
+                return null;
+            }
+            if (node.left != null) {
+                RBNode<K, V> childrenNode = node.left;
+                while (childrenNode.right != null) {
+                    childrenNode = childrenNode.right;
+                }
+                return childrenNode;
+            } else {
+                /**
+                 * 	在当前节点的直系祖先节点中，找到离自
+                 * 	己最近且其右子节点是当前节点的祖先节点的祖先节点，这个祖先节点就是当前节点的前驱节点。
+                 */
+                RBNode<K, V> parentNode = node.parent;
+                RBNode<K, V> currentNode = node;
+                while (parentNode != null && parentNode.left == currentNode) {
+                    currentNode = parentNode;
+                    parentNode = currentNode.parent;
+                }
+                return parentNode;
+            }
+        }
+
+        /**
+         * 获取当前节点的后继节点
+         *
+         * @return
+         */
+        private RBNode<K, V> successor(RBNode<K, V> node) {
+            if (node == null) {
+                return null;
+            }
+            if (node.right != null) {
+                RBNode<K, V> currentNode = node.right;
+                while (currentNode.left != null) {
+                    currentNode = currentNode.left;
+                }
+                return currentNode;
+            } else {
+                RBNode<K, V> parentNode = node.parent;
+                RBNode<K, V> currentNode = node;
+                while (parentNode != null && parentNode.right == currentNode) {
+                    currentNode = parentNode;
+                    parentNode = currentNode.parent;
+                }
+                return parentNode;
+            }
+
+        }
+```
+
+
+
+###### Python
+
+```python
+```
+
+
+
+##### 总结
+
+查找前驱节点，就两种情况，一种是去左子树找比他小的最大值，一种是去直系祖先找比他小的最大值
+
+查找后继节点，也就两种情况，一种是去右子树找比他大的最小值，一种是去直系祖先找比他大的最小值
+
+
+
+#### 删除
+
+##### 思路
+
+在红黑树中，删除节点的思路其实和二叉排序树删除节点是一样的
+
+如果被删除的节点有两个子节点，则删除后要用前驱节点或者后继节点代替该节点
+
+如果被删除的节点有一个子节点，那需要把该节点的父节点指向子节点，这样当前节点会被GC回收
+
+如果被删除的节点没有子节点，则直接把父节点对应的指针指向null即可
+
+在这里有点区别的是，如果被删除的节点有两个子节点，那只要将当前节点的内容设置为前驱节点或者后继节点的内容即可，然后再把前驱或后继节点删除，这样做的好处是可以少一些指针处理。
+
+
+
+代码思路:
+
+如果被删除的节点有两个子节点，则找到当前节点的后继节点，用当前节点的后继节点内容替代当前节点的内容，不删除当前节点，把当前节点指向后继节点
+
+*(这样做了后，依旧删除当前节点，但是在这种情况下，当前节点其实就是后继节点了)*
+
+*(后继节点只可能是叶子节点或者只有一个子节点的节点)*
+
+如果当前节点是根节点(当前节点的父节点为null)，则直接把当前节点的值设置为null
+
+否则
+
+​	如果当前节点是叶子节点(当前节点没有子节点)，则将当前节点的父节点对应指针指向null
+
+​	如果当前节点是只有一个子节点的节点，则将当前节点的父节点指向自己仅存的子节点(爷爷直接 指向孙子)
+
+​	如果当前节点是黑色节点，则要做红黑树平衡调整
+
+
+
+
+
+##### 代码
+
+###### Java
+
+```java
+```
+
+
+
+###### Python
+
+```python
+```
 
 
 

@@ -12,14 +12,14 @@ import java.util.stream.Collectors;
 public class A09AVLTree {
     public static void main(String[] args) {
         AVLTree tree = new AVLTree();
-        List<Node> nodes = Arrays.asList(7, 3, 9, 2, 5, 8, 1, 4, 6)
+        List<Node> nodes = Arrays.asList(5, 3, 8, 4, 6, 9, 7, 11)
                 .stream()
                 .map(number -> new Node(number))
                 .collect(Collectors.toList());
         nodes.forEach(tree::add);
         tree.infixOrder();
         System.out.println("-----------");
-        tree.delete(8);
+        tree.delete(5);
         tree.infixOrder();
 //        tree.infixOrder();
 
@@ -98,7 +98,7 @@ public class A09AVLTree {
                 } else {
                     //两边都不空
                     /**
-                     * 查到最小的节点并将其删除
+                     * 查到右子树最小的节点并将其删除
                      */
                     Node minNode = findMinAndDel(targetNode);
 
@@ -179,9 +179,28 @@ public class A09AVLTree {
             }
         }
 
+        /**
+         * 查找右子树最节点并将其删除
+         *
+         * @param targetNode
+         * @return
+         */
         private Node findMinAndDel(Node targetNode) {
+            /**
+             * 删除节点
+             * 最小节点只可能有两种情况
+             * 1.在右子树的最左节点
+             *    这种情况，将最小节点的父节点指向最小节点的右节点即可
+             * 2.在要删除节点的右子节点
+             *    这种情况，将最小节点的父节点直接指向最小节点的右子节点即可
+             */
             Node minNode = targetNode.right.findMinNode();
-            delete(minNode.value);
+            Node minParentNode = searchParent(minNode.value);
+            if (minNode.equals(minParentNode.left)) {
+                minParentNode.left = minParentNode.left.right;
+            } else {
+                minParentNode.right = minParentNode.right.right;
+            }
             return minNode;
         }
     }
@@ -291,11 +310,11 @@ public class A09AVLTree {
         /**
          * 平衡当前二叉树
          * 当前平衡因子是2 L,x
-         *  当前左孩子的平衡因子为-1，则左孩子先左旋，当前节点再右旋 L,R
-         *  否则直接右旋 LL
+         * 当前左孩子的平衡因子为-1，则左孩子先左旋，当前节点再右旋 L,R
+         * 否则直接右旋 LL
          * 当前平衡因子是-2 R,x
-         *  当前右孩子的平衡因子为1，则右孩子先右旋，当前节点再左旋  R,L
-         *  否则直接左旋 RR
+         * 当前右孩子的平衡因子为1，则右孩子先右旋，当前节点再左旋  R,L
+         * 否则直接左旋 RR
          */
         private void avl() {
             int balance = this.leftHeight() - this.rightHeight();
