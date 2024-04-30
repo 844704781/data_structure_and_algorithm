@@ -5102,7 +5102,17 @@ public class A09AVLTree {
 
 
 
+红黑树转2-3-4树，就是红色上去找黑色即可
 
+
+
+2-3-4树
+
+一个2节点，必须要有两个子节点
+
+一个3节点，必须要有三个子节点
+
+一个4节点，必须要有四个子节点
 
 
 
@@ -5155,6 +5165,14 @@ public class A09AVLTree {
 比如左边全部是黑节点
 
 右边每个黑节点间隔一个红节点
+
+
+
+一棵红黑树，倒数第一层，倒数第二层可能出现没有左节点或者右节点
+
+但是其他层，由于红黑平衡的关系，是一定会有左节点和右节点的
+
+如果其他层出现没有左节点或者右节点，则代表当前红黑树不是一个平衡的红黑树
 
 
 
@@ -5810,7 +5828,7 @@ Java8中HashMap的实现因为用红黑树代替链表(链表长度大于8时)�
 
 如果被删除的节点没有子节点，则直接把父节点对应的指针指向null即可
 
-在这里有点区别的是，如果被删除的节点有两个子节点，那只要将当前节点的内容设置为前驱节点或者后继节点的内容即可，然后再把前驱或后继节点删除，这样做的好处是可以少一些指针处理。
+在这里和普通二叉排序树有点区别的是，如果被删除的节点有两个子节点，那只要将当前节点的内容设置为前驱节点或者后继节点的内容即可，然后再把前驱或后继节点删除，这样做的好处是可以少一些指针处理。
 
 
 
@@ -5826,11 +5844,13 @@ Java8中HashMap的实现因为用红黑树代替链表(链表长度大于8时)�
 
 否则
 
-​	如果当前节点是叶子节点(当前节点没有子节点)，则将当前节点的父节点对应指针指向null
-
 ​	如果当前节点是只有一个子节点的节点，则将当前节点的父节点指向自己仅存的子节点(爷爷直接 指向孙子)
 
-​	如果当前节点是黑色节点，则要做红黑树平衡调整
+​		如果当前被删节点是黑色节点，则要做红黑树平衡调整
+
+​	如果当前节点是叶子节点(当前节点没有子节点)，则将当前节点的父节点对应指针指向null
+
+​	
 
 
 
@@ -5841,6 +5861,63 @@ Java8中HashMap的实现因为用红黑树代替链表(链表长度大于8时)�
 ###### Java
 
 ```java
+        /**
+         * 从红黑树中删除指定节点
+         *
+         * @param node
+         */
+        private void deleteNode(RBNode<K, V> node) {
+            if (node.left != null && node.right != null) {
+                RBNode<K, V> successor = successor(node);
+                node.key = successor.key;
+                node.value = successor.value;
+                node = successor;
+                /**
+                 * 如果进入了这个方法，那node一定不可能有两个子节点了
+                 */
+            }
+
+            RBNode<K, V> replaceNode = node.left != null ? node.left : node.right;
+            if (replaceNode != null) {
+                /**
+                 * 仅有一个子节点的节点
+                 * 1. 当前节点有右子节点(右子树)
+                 * 2. 当前节点有左子节点(左子节点可能还会有右子树，但是不可能有左子树了)
+                 */
+                RBNode<K, V> parent = node.parent;
+                if (parent.right == node) {
+                    //有右子接地那
+                    parent.right = replaceNode;
+                } else {
+                    //有左子节点
+                    parent.left = replaceNode;
+                }
+                replaceNode.parent = parent;
+
+                node.left = node.right = node.parent = null;
+                if (node.color == BLACK) {
+                    fixAfterDeletion(node);
+                }
+            } else if (node.parent == null) {
+                //根节点
+                root = null;
+            } else {
+                //叶子节点
+                if (node.color == BLACK) {
+                    fixAfterDeletion(node);
+                }
+                if (node.parent != null) {
+                    //这里还要判断node是否是根节点的原因，是因为上面调整完，当前节点有可能变成根节点
+                    //叶子节点
+                    if (node == node.parent.left) {
+                        node.parent.left = null;
+                    } else {
+                        node.parent.right = null;
+                    }
+                    node.parent = null;
+                }
+            }
+        }
 ```
 
 
@@ -5849,6 +5926,333 @@ Java8中HashMap的实现因为用红黑树代替链表(链表长度大于8时)�
 
 ```python
 ```
+
+
+
+#### 删除后调整节点
+
+##### 思路
+
+
+
+由删除的逻辑可知删除后，要调整的节点位置一定在红黑树的倒数1、2层，这个位置等价与2-3-4树的叶子节点。
+
+由2-3-4树性质可知，被删的节点可能是2-3-4树中的2节点中的元素，3节点中的元素，4节点中的元素，本文将对这几种节点元素的删除分开讨论。
+
+(注意:当删除2节点时，由于2节点的特性，其删除操作相对于3、4节点更为复杂。因为2节点中只有一个元素，没有兄弟元素可供借位，与3、4节点不同。而且，2节点等价于红黑树中的一个黑色节点，因此，为了保持红黑树的平衡，在删除2节点时需要进行旋转调整。因此，删除2节点是最为复杂的情况。因此，我们在介绍删除操作时，先处理4节点中的元素，然后是3节点，最后是2节点。)
+
+在2-3-4树叶子结点中删除元素:
+
+* 删除4节点中的元素
+
+  **4节点**：有三个元素，中间黑，两边红。
+
+  - 删除两个红色节点：直接删除，无需调整。
+  - 删除黑色节点：需要借位，此时自身有两个红色兄弟节点，可以选择其中一个红色兄弟节点（前驱或后继）顶替自身的位置，并将当前节点由红变为黑。
+
+  ![](./img/067.png)
+
+* 删除3节点中的元素
+
+  **3节点**：有两个元素，上黑下红。
+
+  - 删除红色节点：不需要调整。
+
+  - 删除黑色节点（由兄弟替代）：需要调整，此时自身有一个红色兄弟节点，兄弟节点将占据自身位置并变成黑色。
+
+    ![](./img/066.png)
+
+* 删除2节点中的元素
+
+  **2节点**：只有一个元素，为黑色。
+
+  - 删除黑色节点：
+
+    **兄弟可借**:由于自身只有一个黑色元素，无法自行调整，需要父节点下来，兄弟节点上去顶替父节点的位置。
+
+  ![](./img/068.png)
+
+等价的在红黑树倒数1、2层中删除节点:
+
+* 删除4节点中的元素
+
+  4节点，上面黑两边红:
+
+  删除红色节点：直接删除即可平衡
+
+  删除黑色节点:  删除时会用红色叶子右节点(后继节点)的内容代替当前节点的内容，实际删除的是红色叶子右节点(后继节点)，所以只要直接删除红色叶子节点即可平衡
+
+  ![](./img/074.png)
+
+* 删除3节点中的元素
+
+  - 删除红色节点：不需要调整。
+  - 删除黑色节点（由兄弟替代）：需要调整，此时自身有一个红色兄弟节点，兄弟节点将占据自身位置并变成黑色。
+
+  ![](./img/071.png)
+
+  
+
+* 删除2节点中的元素
+
+  如果2节点是左节点，则按照下面的逻辑处理，如果2节点是右节点，则按照下面的逻辑反之
+
+  * 兄弟可借的情况:
+
+    有两种情况:
+
+    1. 兄弟为红色
+
+       如果兄弟为红色，则要进行调整，调整后兄弟就为黑色，然后按照 下一步兄弟为黑色进行处理
+
+       ![](./img/075.png)
+
+       
+
+    2. 兄弟为黑色
+
+       可分为兄弟有两个孩子，兄弟有左孩子，兄弟有右孩子
+
+       * 有两个孩子
+
+       ![](./img/076.png)
+
+       
+
+       * 有右孩子
+
+         ![](./img/078.png)
+
+         
+
+       
+
+       * 有左孩子
+
+         ![](./img/077.png)
+
+         
+
+
+
+
+
+
+
+红黑树删除时做调整的目的是希望删除后，红黑树经过调整后也能平衡。
+
+
+
+问题:
+
+删除有两个子节点的红色节点，要怎么操作
+
+因为有两个子节点的节点肯定不是2-3-4树的叶子节点，也就不是红黑树的叶子节点和叶子节点上一层，而红黑树删除针对的是叶子节点和叶子节点上一层，所以删除其他层的红色节点，只需要在叶子节点和叶子节点上一层找到后继节点即可，找到后，用后继节点的值代替当前要删除的节点，然后处理后继节点被删的问题，后继节点被删，则要看后继节点是2节点，3节点，还是4节点，根据这几种节点的情况分别处理。
+
+
+
+总结:
+
+删除的节点一定在红黑树的最后两层
+
+删除的是红色节点，不需要做任何平衡调整
+
+删除的是黑色节点，才需要做平衡调整，调整的节点有两种:
+
+1. 调整的是替代的红色节点颜色
+2. 调整的是以被删除的黑色节点的父节点为根节点的红黑树。
+
+
+
+##### 代码思路
+
+* 调整的节点不是根节点且是黑色
+
+  当前黑色节点有两种情况
+
+  * 当前节点是父节点的左节点
+
+    获取右兄弟节点sib
+
+    * 如果当前节点的兄弟节点(父节点的右节点)是红色需要先做以下调整
+
+      ```java
+      x.parent.right.color = BLACK //兄弟节点的颜色变黑
+      x.parent.color = RED //父节点变红
+      leftRotate(x.parent) //父节点左旋
+      sib = x.parent.right //兄弟节点变为旋转后的新兄弟
+      ```
+
+      调整完上面的还要进行以下面调整
+      
+      * 如果当前兄弟没有孩子
+      
+      * 当前兄弟有孩子
+      
+        * 当前兄弟右孩子是空的
+      
+          ```java
+          sib.left.color = BLACK //兄弟左孩子变黑
+          sib.color = RED //兄弟队变红
+          rightRotate(sib) //兄弟右旋
+          sib = x.parent.right //兄弟节点变为旋转后的新兄弟
+          ```
+      
+        ```java
+        sib.color = x.parent.color//兄弟的颜色变成父节点颜色
+        x.parent.color = BLACK //父节点变黑
+        sib.right.color = BLACK //兄弟节点的右孩子变黑，为了补充黑平衡
+        leftRotate(x.parent) //父节点左旋
+        x = root //将调整节点设置为根节点，相当于停止调整  
+        ```
+
+  * 当前节点是父节点的右节点
+
+    * 获取左兄弟节点sib
+
+      * 如果当前节点的兄弟节点(父节点的左节点)是红色需要先做以下调整
+    
+        ```java
+        x.parent.left.color = BLACK //兄弟节点的颜色变黑
+        x.parent.color = RED //父节点变红
+        rightRotate(x.parent) //父节点右旋
+        sib = x.parent.left //兄弟节点变为旋转后的新兄弟
+        ```
+    
+        调整完上面的还要进行以下面调整
+    
+        * 如果当前兄弟没有孩子
+    
+        * 当前兄弟有孩子
+    
+          * 当前兄弟左孩子是空的
+    
+            ```java
+            sib.right.color = BLACK //兄弟左孩子变黑
+            sib.color = RED //兄弟队变红
+            leftRotate(sib) //兄弟右旋
+            sib = x.parent.left //兄弟节点变为旋转后的新兄弟
+            ```
+    
+          ```java
+          sib.color = x.parent.color//兄弟的颜色变成父节点颜色
+          x.parent.color = BLACK //父节点变黑
+          sib.left.color = BLACK //兄弟节点的左孩子变黑，为了补充黑平衡
+          rightRotate(x.parent) //父节点左旋
+          x = root //将调整节点设置为根节点，相当于停止调整  
+          ```
+
+  现在调整的节点是根节点**或**是红色节点
+
+  ```java
+  x.color = BLACK
+  ```
+
+
+
+###### Java
+
+```java
+        /**
+         * 删除时调整红黑平衡
+         *
+         * @param x
+         */
+        private void fixAfterDeletion(RBNode<K, V> x) {
+            while (x != root && colorOf(x) == BLACK) {
+                if (x == leftOf(parentOf(x))) {
+                    //删除的是父节点的左节点
+                    RBNode sib = rightOf(parentOf(x));
+                    //查看兄弟节点是否为红色
+                    if (colorOf(sib) == RED) {
+                        setColor(sib, BLACK);
+                        //变色旋转，获取真正的兄弟节点
+                        setColor(parentOf(x), RED);
+                        leftRotate(parentOf(x));
+                        sib = rightOf(parentOf(x));
+                    }
+                    //此时兄弟节点为黑色
+
+                    if (colorOf(leftOf(sib)) == BLACK && colorOf(rightOf(sib)) == BLACK) {
+                        //兄弟没有孩子作为替补
+                        //TODO
+
+                    } else {
+                        //兄弟节点有孩子作为替补
+                        //兄弟没有右孩子，只有有左孩子,则旋转为右孩子作为真正的替补兄弟
+                        if (colorOf(rightOf(sib)) == BLACK) {
+                            setColor(leftOf(sib), BLACK);
+                            setColor(sib, RED);
+                            rightOf(sib);
+                            sib = rightOf(parentOf(x));
+                        }
+                        //有右孩子作为替补
+                        setColor(sib, colorOf(parentOf(x)));
+                        setColor(parentOf(x), BLACK);
+                        setColor(rightOf(sib), BLACK);
+                        leftRotate(parentOf(x));
+                        x = root;
+                    }
+                } else {
+                    //删除的是父节点的右节点
+                    RBNode sib = leftOf(parentOf(x));//兄弟节点
+                    if (colorOf(sib) == RED) {
+                        setColor(sib, BLACK);
+                        setColor(parentOf(x), RED);
+                        rightRotate(parentOf(x));
+                        sib = leftOf(parentOf(x));
+                    }
+                    //判断兄弟是否有孩子可借
+                    if (colorOf(leftOf(sib)) == BLACK && colorOf(rightOf(sib)) == BLACK) {
+                        // TODO 无孩子可借
+                    } else {
+                        //判断是否有左孩子
+                        if (colorOf(leftOf(sib)) == BLACK) {
+                            //左孩子为空，右孩子旋转
+                            setColor(rightOf(sib), BLACK);
+                            setColor(sib, RED);
+                            leftRotate(sib);
+                            sib = leftOf(parentOf(x));
+                        }
+                        setColor(sib, colorOf(parentOf(x)));
+                        setColor(parentOf(x), BLACK);
+                        setColor(leftOf(sib), BLACK);
+                        rightRotate(parentOf(x));
+                        x = root;
+                    }
+                }
+            }
+            //根节点或者替补红节点
+            setColor(x, BLACK);
+        }
+```
+
+
+
+
+
+###### Python
+
+```python
+```
+
+
+
+
+
+
+注意：
+
+​	传入参数为当前要调整的节点，所谓的调整就是变色或旋转，只有叶子节点和叶子节点上一层的节点才可能要使用这个方法做调整
+
+要调用这个方法也就(叶子结点和叶子结点上一层)两个地方:
+
+1. 红黑树最后两层上红下黑(3节点)删除上面的黑色节点，替代的节点红色需要调整颜色
+2. 红黑树叶子节点(2节点)删除--->删除的是黑色
+
+​	如果传入的参数是null，则使用调整方法后，会将根节点设置为黑色
+
+
 
 
 

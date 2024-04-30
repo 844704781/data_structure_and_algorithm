@@ -47,6 +47,168 @@ public class A10RBTree {
         public static final boolean BLACK = true;
         public static final boolean RED = false;
 
+        /**
+         * 根据key从红黑树中删除对应节点，返回被删除的节点
+         *
+         * @param key
+         * @return 被删除的节点
+         */
+        public RBNode<K, V> remove(K key) {
+            if (key == null) {
+                return null;
+            }
+            RBNode<K, V> node = getNode(key);
+            if (node == null) {
+                return null;
+            }
+            deleteNode(node);
+            return node;
+        }
+
+        /**
+         * 从红黑树中删除指定节点
+         *
+         * @param node
+         */
+        private void deleteNode(RBNode<K, V> node) {
+            if (node.left != null && node.right != null) {
+                RBNode<K, V> successor = successor(node);
+                node.key = successor.key;
+                node.value = successor.value;
+                node = successor;
+                /**
+                 * 如果进入了这个方法，那node一定不可能有两个子节点了
+                 */
+            }
+
+            //处理叶子节点和叶子节点上一层
+            RBNode<K, V> replaceNode = node.left != null ? node.left : node.right;
+            if (replaceNode != null) {
+                /**
+                 * 叶子结点上一层
+                 * 仅有一个子节点的节点(3节点，上黑下红)
+                 * 1. 当前节点有右子节点(右子树)
+                 * 2. 当前节点有左子节点(左子节点可能还会有右子树，但是不可能有左子树了)
+                 */
+                RBNode<K, V> parent = node.parent;
+                if (parent.right == node) {
+                    //有右子字节
+                    parent.right = replaceNode;
+                } else {
+                    //有左子节点
+                    parent.left = replaceNode;
+                }
+                replaceNode.parent = parent;
+
+                node.left = node.right = node.parent = null;
+                if (node.color == BLACK) {
+                    //替代节点一定是红色
+                    fixAfterDeletion(replaceNode);
+                }
+            } else if (node.parent == null) {
+                //根节点 ，代表整棵树只有一个节点，就是根节点
+                root = null;
+            } else {
+                //叶子节点
+                if (node.color == BLACK) {
+                    fixAfterDeletion(node);
+                }
+                if (node.parent != null) {
+                    //这里还要判断node是否是根节点的原因，是因为上面调整完，当前节点有可能变成根节点
+                    //叶子节点
+                    if (node == node.parent.left) {
+                        node.parent.left = null;
+                    } else {
+                        node.parent.right = null;
+                    }
+                    node.parent = null;
+                }
+            }
+        }
+
+        /**
+         * 删除时调整红黑平衡
+         *
+         * @param x
+         */
+        private void fixAfterDeletion(RBNode<K, V> x) {
+            while (x != root && colorOf(x) == BLACK) {
+                if (x == leftOf(parentOf(x))) {
+                    //删除的是父节点的左节点
+                    RBNode sib = rightOf(parentOf(x));
+                    //查看兄弟节点是否为红色
+                    if (colorOf(sib) == RED) {
+                        setColor(sib, BLACK);
+                        //变色旋转，获取真正的兄弟节点
+                        setColor(parentOf(x), RED);
+                        leftRotate(parentOf(x));
+                        sib = rightOf(parentOf(x));
+                    }
+                    //此时兄弟节点为黑色
+
+                    if (colorOf(leftOf(sib)) == BLACK && colorOf(rightOf(sib)) == BLACK) {
+                        //兄弟没有孩子作为替补
+                        //TODO
+
+                    } else {
+                        //兄弟节点有孩子作为替补
+                        //兄弟没有右孩子，只有有左孩子,则旋转为右孩子作为真正的替补兄弟
+                        if (colorOf(rightOf(sib)) == BLACK) {
+                            setColor(leftOf(sib), BLACK);
+                            setColor(sib, RED);
+                            rightOf(sib);
+                            sib = rightOf(parentOf(x));
+                        }
+                        //有右孩子作为替补
+                        setColor(sib, colorOf(parentOf(x)));
+                        setColor(parentOf(x), BLACK);
+                        setColor(rightOf(sib), BLACK);
+                        leftRotate(parentOf(x));
+                        x = root;
+                    }
+                } else {
+                    //删除的是父节点的右节点
+                    RBNode sib = leftOf(parentOf(x));//兄弟节点
+                    if (colorOf(sib) == RED) {
+                        setColor(sib, BLACK);
+                        setColor(parentOf(x), RED);
+                        rightRotate(parentOf(x));
+                        sib = leftOf(parentOf(x));
+                    }
+                    //判断兄弟是否有孩子可借
+                    if (colorOf(leftOf(sib)) == BLACK && colorOf(rightOf(sib)) == BLACK) {
+                        // TODO 无孩子可借
+                    } else {
+                        //判断是否有左孩子
+                        if (colorOf(leftOf(sib)) == BLACK) {
+                            //左孩子为空，右孩子旋转
+                            setColor(rightOf(sib), BLACK);
+                            setColor(sib, RED);
+                            leftRotate(sib);
+                            sib = leftOf(parentOf(x));
+                        }
+                        setColor(sib, colorOf(parentOf(x)));
+                        setColor(parentOf(x), BLACK);
+                        setColor(leftOf(sib), BLACK);
+                        rightRotate(parentOf(x));
+                        x = root;
+                    }
+                }
+            }
+            //根节点或者替补红节点
+            setColor(x, BLACK);
+        }
+
+        /**
+         * 根据key找到对应节点
+         *
+         * @param key
+         * @return
+         */
+        private RBNode<K, V> getNode(K key) {
+            return null;
+        }
+
 
         /**
          * 左旋
