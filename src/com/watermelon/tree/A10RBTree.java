@@ -7,17 +7,53 @@ import java.util.*;
  */
 public class A10RBTree {
     public static void main(String[] args) {
-        RBTree<Integer, Integer> tree = new RBTree();
-        List<Integer> numbers = Arrays.asList(5, 3, 8, 0, 2, 4, 6, 9, 7, 11);
 
-        numbers.stream()
-                .forEach(i -> {
-                            Integer number = i.intValue();
-                            tree.put(number, number);
-                        }
-                );
-        RBNode node = tree.successor(tree.root.left.right.right);
-        System.out.println(node);
+        RBNode<String, String> node5 = new RBNode("005", "005", null);
+        node5.color = RBTree.BLACK;
+        RBNode<String, String> node1 = new RBNode("001", "001", node5);
+        node1.color = RBTree.BLACK;
+        RBNode<String, String> node9 = new RBNode("009", "009", node5);
+        node9.color = RBTree.BLACK;
+        node5.left = node1;
+        node5.right = node9;
+        RBNode<String, String> node0 = new RBNode("000", "000", node1);
+        node0.color = RBTree.BLACK;
+        RBNode<String, String> node3 = new RBNode("003", "003", node1);
+        node3.color = RBTree.BLACK;
+        node1.left = node0;
+        node1.right = node3;
+        RBNode<String, String> node7 = new RBNode("007", "007", node9);
+        node7.color = RBTree.BLACK;
+        RBNode<String, String> node11 = new RBNode("011", "011", node9);
+        node11.color = RBTree.BLACK;
+        node9.left = node7;
+        node9.right = node11;
+
+        RBTree tree = new RBTree();
+        tree.root = node5;
+
+        A10TreeOperation.show(tree.getRoot());
+
+        tree.remove("000");
+        A10TreeOperation.show(tree.getRoot());
+
+//        testInsertOpt();
+//        RBTree<String, Object> rbt = new RBTree<>();
+//        List<Integer> nums = Arrays.asList(4, 2, 6, 1, 3, 5, 9, 7, 11, 8, 10, 12);
+//        nums.forEach(num -> {
+//            if (num < 10) {
+//                rbt.put("00" + num, null);
+//            } else if (num < 100) {
+//                rbt.put("0" + num, null);
+//            }
+//        });
+//        rbt.remove("002");
+//        rbt.remove("005");
+//        A10TreeOperation.show(rbt.getRoot());
+//        System.out.println("-----------------------------------------------------------");
+//        rbt.remove("001");
+//        A10TreeOperation.show(rbt.getRoot());
+
     }
 
 
@@ -27,18 +63,53 @@ public class A10RBTree {
     public static void testInsertOpt() {
         Scanner scanner = new Scanner(System.in);
         RBTree<String, Object> rbt = new RBTree<>();
+
         while (true) {
-            System.out.println("请输入你要插入的节点:");
-            String key = scanner.next();
-            System.out.println();
-            //这里代码最多支持3位数，3位以上的话红黑树显示太错位了，这里就不重构代码了,大家可自行重构
-            if (key.length() == 1) {
-                key = "00" + key;
-            } else if (key.length() == 2) {
-                key = "0" + key;
+            System.out.println("请输入指令:");
+            System.out.println("1. 增加节点");
+            System.out.println("2. 删除节点");
+            String command = scanner.next();
+            String key = null;
+            switch (command) {
+                case "1":
+                    System.out.println("请输入插入的节点内容");
+                    key = scanner.next();
+                    System.out.println();
+                    //这里代码最多支持3位数，3位以上的话红黑树显示太错位了，这里就不重构代码了,大家可自行重构
+                    if (key.length() == 1) {
+                        key = "00" + key;
+                    } else if (key.length() == 2) {
+                        key = "0" + key;
+                    }
+                    rbt.put(key, null);
+                    System.out.println("--------------------------------------------------------------");
+                    A10TreeOperation.show(rbt.getRoot());
+                    System.out.println("--------------------------------------------------------------");
+                    break;
+                case "2":
+                    if (rbt.root == null) {
+                        System.out.println("节点为空");
+                        break;
+                    }
+                    System.out.println("请输入删除的节点内容");
+                    key = scanner.next();
+                    System.out.println();
+                    //这里代码最多支持3位数，3位以上的话红黑树显示太错位了，这里就不重构代码了,大家可自行重构
+                    if (key.length() == 1) {
+                        key = "00" + key;
+                    } else if (key.length() == 2) {
+                        key = "0" + key;
+                    }
+                    rbt.remove(key);
+                    System.out.println("--------------------------------------------------------------");
+                    A10TreeOperation.show(rbt.getRoot());
+                    System.out.println("--------------------------------------------------------------");
+                    break;
+                default:
+                    break;
             }
-            rbt.put(key, null);
-            A10TreeOperation.show(rbt.getRoot());
+
+
         }
     }
 
@@ -147,19 +218,20 @@ public class A10RBTree {
                     //此时兄弟节点为黑色
 
                     if (colorOf(leftOf(sib)) == BLACK && colorOf(rightOf(sib)) == BLACK) {
-                        //兄弟没有孩子作为替补
+                        //兄弟没有红孩子作为替补
                         //TODO
-
+                        setColor(sib, RED);
+                        x = parentOf(x);
                     } else {
-                        //兄弟节点有孩子作为替补
-                        //兄弟没有右孩子，只有有左孩子,则旋转为右孩子作为真正的替补兄弟
+                        //兄弟节点有红孩子作为替补
                         if (colorOf(rightOf(sib)) == BLACK) {
+                            //兄弟有左红孩子，则旋转为右孩子作为真正的替补兄弟
                             setColor(leftOf(sib), BLACK);
                             setColor(sib, RED);
                             rightOf(sib);
                             sib = rightOf(parentOf(x));
                         }
-                        //有右孩子作为替补
+                        //当前兄弟有右红孩子作为替补
                         setColor(sib, colorOf(parentOf(x)));
                         setColor(parentOf(x), BLACK);
                         setColor(rightOf(sib), BLACK);
@@ -178,6 +250,8 @@ public class A10RBTree {
                     //判断兄弟是否有孩子可借
                     if (colorOf(leftOf(sib)) == BLACK && colorOf(rightOf(sib)) == BLACK) {
                         // TODO 无孩子可借
+                        setColor(sib, RED);
+                        x = parentOf(x);
                     } else {
                         //判断是否有左孩子
                         if (colorOf(leftOf(sib)) == BLACK) {
@@ -206,6 +280,23 @@ public class A10RBTree {
          * @return
          */
         private RBNode<K, V> getNode(K key) {
+            RBNode current = this.root;
+            while (current != null) {
+                int cmp = current.getKey().compareTo(key);
+                if (cmp == 0) {
+                    return current;
+                } else if (cmp > 0) {
+                    if (current.left == null) {
+                        return null;
+                    }
+                    current = current.left;
+                } else {
+                    if (current.right == null) {
+                        return null;
+                    }
+                    current = current.right;
+                }
+            }
             return null;
         }
 

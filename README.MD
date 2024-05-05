@@ -477,252 +477,6 @@
 
 
 
-# 哈希表
-
-## 使用数组加链表实现哈希表
-
-
-
-### Java
-
-```java
-public static void main(String[] args) {
-        IHashTable<String, String> table = new IHashTable<>(10);
-
-        Scanner sc = new Scanner(System.in);
-        while (true) {
-            System.out.println("功能:");
-            System.out.println("1. add");
-            System.out.println("2. show");
-            System.out.println("3. exit");
-            System.out.println("4. findById");
-            System.out.println("5. removeById");
-            String input = sc.next();
-            int id;
-            String key;
-            String value;
-            switch (input) {
-                case "1":
-                    System.out.println("请输入要输入的id:");
-                    id = sc.nextInt();
-                    System.out.println("请输入key:");
-                    key = sc.next();
-                    System.out.println("请输入value:");
-                    value = sc.next();
-                    table.put(id, key, value);
-                    break;
-                case "2":
-                    table.show();
-                    break;
-                case "3":
-                    sc.close();
-                    System.exit(0);
-                    break;
-                case "4":
-                    System.out.println("请输入要查找的id:");
-                    id = sc.nextInt();
-                    Node<String, String> entry = table.findById(id);
-                    System.out.println(entry);
-                    break;
-                case "5":
-                    System.out.println("请输入要删除的id:");
-                    id = sc.nextInt();
-                    table.removeById(id);
-                    break;
-                default:
-                    System.out.println("输入错误请重新输入");
-                    break;
-            }
-        }
-
-
-    }
-
-    private static String randomString(int size) {
-        StringBuilder sbd = new StringBuilder();
-
-        for (int j = 0; j < size; j++) {
-            int random = new Random().nextInt('z' - 'a' + 1) + 'a';
-            for (int i = 'a'; i <= 'z'; i++) {
-                if (random == i) {
-                    sbd.append((char) i);
-                }
-            }
-        }
-        return sbd.toString();
-    }
-
-
-    public static class IHashTable<K, V> {
-        private LinkedNode<K, V>[] tables;
-        private int size;
-
-        public IHashTable(int size) {
-            this.size = size;
-            tables = new LinkedNode[size];
-            for (int i = 0; i < tables.length; i++) {
-                tables[i] = new LinkedNode<>();
-            }
-        }
-
-        public void put(int id, K key, V value) {
-            int index = hash(id);
-            tables[index].add(new Node<K, V>(id, key, value));
-        }
-
-        public void show() {
-            for (int i = 0; i < tables.length; i++) {
-                LinkedNode<K, V> table = tables[i];
-                table.show(i);
-            }
-        }
-
-
-        private int hash(int id) {
-            return id % this.size;
-        }
-
-        public Node<K, V> findById(int id) {
-            int index = hash(id);
-            return tables[index].findById(id);
-        }
-
-        public void removeById(int id) {
-            int index = hash(id);
-            tables[index].removeById(id);
-        }
-    }
-
-    public static class LinkedNode<K, V> {
-        private Node<K, V> head;
-
-        /**
-         * 将节点加入链表结尾
-         *
-         * @param node
-         */
-        public void add(Node<K, V> node) {
-            if (head == null) {
-                head = node;
-                return;
-            }
-            Node<K, V> current = head;
-            while (true) {
-                if (current.getNext() == null) {
-                    break;
-                }
-                current = current.getNext();
-            }
-            current.setNext(node);
-        }
-
-        /**
-         * 展示当前链表的数据
-         *
-         * @param linkedNo
-         */
-        public void show(int linkedNo) {
-            System.out.printf("%d --> ", linkedNo);
-            Node<K, V> current = head;
-            while (current != null) {
-                System.out.printf("id:%s, key: %s,value: %s\t",
-                        current.getId(), current.getKey(), current.getValue());
-                current = current.getNext();
-            }
-            System.out.println();
-        }
-
-        public Node<K, V> findById(int id) {
-            Node<K, V> current = head;
-            while (current != null) {
-                if (current.getId() == id) {
-                    return current;
-                }
-                current = current.getNext();
-            }
-            return null;
-        }
-
-        public void removeById(int id) {
-            Node<K, V> current = head;
-            if (current.getId() == id) {
-                head = head.getNext();
-                System.out.println("删除成功");
-                return;
-            }
-            while (true) {
-                if (current.getNext() == null) {
-                    System.out.println("未找到");
-                    break;
-                }
-                if (current.getNext().getId() == id) {
-                    current.setNext(current.getNext().getNext());
-                    System.out.println("删除成功");
-                }
-                current = current.getNext();
-            }
-        }
-    }
-
-    /**
-     * 节点
-     *
-     * @param <K>
-     * @param <V>
-     */
-    public static class Node<K, V> {
-        private int id;
-        private K key;
-        private V value;
-        private Node next;
-
-        public Node() {
-        }
-
-        public Node(int id, K key, V value) {
-            this.id = id;
-            this.key = key;
-            this.value = value;
-        }
-
-        public void setNext(Node next) {
-            this.next = next;
-        }
-
-        public Node getNext() {
-            return next;
-        }
-
-        public int getId() {
-            return id;
-        }
-
-        public K getKey() {
-            return key;
-        }
-
-        public V getValue() {
-            return value;
-        }
-
-        @Override
-        public String toString() {
-            return "{" +
-                    "id=" + id +
-                    ",key=" + key +
-                    ", value=" + value +
-                    '}';
-        }
-    }
-```
-
-
-
-### Python
-
-```python
-```
-
 
 
 # 树
@@ -5972,6 +5726,12 @@ Java8中HashMap的实现因为用红黑树代替链表(链表长度大于8时)�
 
   ![](./img/068.png)
 
+    **兄弟不可借**: 这种情况相当于所有不可借的节点都上去找父亲
+
+  ![](./img/081.png)
+
+
+
 等价的在红黑树倒数1、2层中删除节点:
 
 * 删除4节点中的元素
@@ -6030,12 +5790,32 @@ Java8中HashMap的实现因为用红黑树代替链表(链表长度大于8时)�
        * 有左孩子
 
          ![](./img/077.png)
-
+  
          
 
-
-
-
+  * 兄弟不可借的情况:
+  
+    兄弟节点修改为红色(兄弟自损)
+  
+    将调整的节点设置为父亲节点，继续循环当前调整方法
+  
+    当前循环有两种可能:
+  
+    1. 当前调整节点为红色或者根节点
+  
+       设置调整节点为黑色即可平衡
+  
+       ![](./img/079.png)
+  
+       
+  
+    2. 当前调整节点为黑色
+  
+       则要向上循环的去调整，可能是当前调整节点兄弟自损，也可能是当前调整节点兄弟有替补孩子作为替补
+  
+       ![](./img/080.png)
+  
+       
 
 
 
@@ -6085,11 +5865,16 @@ Java8中HashMap的实现因为用红黑树代替链表(链表长度大于8时)�
 
       调整完上面的还要进行以下面调整
       
-      * 如果当前兄弟没有孩子
+      * 如果当前兄弟没有红色替补孩子
       
-      * 当前兄弟有孩子
+        ```java
+        sib.color = RED //兄弟自损
+        x = x.parent //向上循环
+        ```
       
-        * 当前兄弟右孩子是空的
+      * 当前兄弟有红孩子
+      
+        * 当前兄弟右孩子是空或者黑(代表左孩子是红)
       
           ```java
           sib.left.color = BLACK //兄弟左孩子变黑
@@ -6105,11 +5890,11 @@ Java8中HashMap的实现因为用红黑树代替链表(链表长度大于8时)�
         leftRotate(x.parent) //父节点左旋
         x = root //将调整节点设置为根节点，相当于停止调整  
         ```
-
+  
   * 当前节点是父节点的右节点
-
+  
     * 获取左兄弟节点sib
-
+  
       * 如果当前节点的兄弟节点(父节点的左节点)是红色需要先做以下调整
     
         ```java
@@ -6121,19 +5906,24 @@ Java8中HashMap的实现因为用红黑树代替链表(链表长度大于8时)�
     
         调整完上面的还要进行以下面调整
     
-        * 如果当前兄弟没有孩子
+        * 如果当前兄弟没有替补红孩子
     
+          ```java
+          sib.color = RED //兄弟自损
+          x = x.parent //向上循环
+          ```
+        
         * 当前兄弟有孩子
-    
-          * 当前兄弟左孩子是空的
-    
+        
+          * 当前兄弟左孩子是空的或者黑的(右孩子是红的)
+        
             ```java
             sib.right.color = BLACK //兄弟左孩子变黑
             sib.color = RED //兄弟队变红
             leftRotate(sib) //兄弟右旋
             sib = x.parent.left //兄弟节点变为旋转后的新兄弟
             ```
-    
+        
           ```java
           sib.color = x.parent.color//兄弟的颜色变成父节点颜色
           x.parent.color = BLACK //父节点变黑
@@ -6141,9 +5931,9 @@ Java8中HashMap的实现因为用红黑树代替链表(链表长度大于8时)�
           rightRotate(x.parent) //父节点左旋
           x = root //将调整节点设置为根节点，相当于停止调整  
           ```
-
+  
   现在调整的节点是根节点**或**是红色节点
-
+  
   ```java
   x.color = BLACK
   ```
@@ -6174,19 +5964,20 @@ Java8中HashMap的实现因为用红黑树代替链表(链表长度大于8时)�
                     //此时兄弟节点为黑色
 
                     if (colorOf(leftOf(sib)) == BLACK && colorOf(rightOf(sib)) == BLACK) {
-                        //兄弟没有孩子作为替补
+                        //兄弟没有红孩子作为替补
                         //TODO
-
+                        setColor(sib, RED);
+                        x = parentOf(x);
                     } else {
-                        //兄弟节点有孩子作为替补
-                        //兄弟没有右孩子，只有有左孩子,则旋转为右孩子作为真正的替补兄弟
+                        //兄弟节点有红孩子作为替补
                         if (colorOf(rightOf(sib)) == BLACK) {
+                            //兄弟有左红孩子，则旋转为右孩子作为真正的替补兄弟
                             setColor(leftOf(sib), BLACK);
                             setColor(sib, RED);
                             rightOf(sib);
                             sib = rightOf(parentOf(x));
                         }
-                        //有右孩子作为替补
+                        //当前兄弟有右红孩子作为替补
                         setColor(sib, colorOf(parentOf(x)));
                         setColor(parentOf(x), BLACK);
                         setColor(rightOf(sib), BLACK);
@@ -6205,6 +5996,8 @@ Java8中HashMap的实现因为用红黑树代替链表(链表长度大于8时)�
                     //判断兄弟是否有孩子可借
                     if (colorOf(leftOf(sib)) == BLACK && colorOf(rightOf(sib)) == BLACK) {
                         // TODO 无孩子可借
+                        setColor(sib, RED);
+                        x = parentOf(x);
                     } else {
                         //判断是否有左孩子
                         if (colorOf(leftOf(sib)) == BLACK) {
