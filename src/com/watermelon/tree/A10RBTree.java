@@ -8,33 +8,31 @@ import java.util.*;
 public class A10RBTree {
     public static void main(String[] args) {
 
-        RBNode<String, String> node5 = new RBNode("005", "005", null);
-        node5.color = RBTree.BLACK;
-        RBNode<String, String> node1 = new RBNode("001", "001", node5);
-        node1.color = RBTree.BLACK;
-        RBNode<String, String> node9 = new RBNode("009", "009", node5);
-        node9.color = RBTree.BLACK;
-        node5.left = node1;
-        node5.right = node9;
-        RBNode<String, String> node0 = new RBNode("000", "000", node1);
+        RBNode<String, String> node0 = new RBNode("000", "000", null);
         node0.color = RBTree.BLACK;
-        RBNode<String, String> node3 = new RBNode("003", "003", node1);
-        node3.color = RBTree.BLACK;
-        node1.left = node0;
-        node1.right = node3;
-        RBNode<String, String> node7 = new RBNode("007", "007", node9);
-        node7.color = RBTree.BLACK;
-        RBNode<String, String> node11 = new RBNode("011", "011", node9);
-        node11.color = RBTree.BLACK;
-        node9.left = node7;
-        node9.right = node11;
+
+        RBNode<String, String> node3 = new RBNode("003", "003", null);
+        node3.color = RBTree.RED;
+        node3.parent = node0;
+
+        RBNode<String, String> node9 = new RBNode("009", "009", null);
+        node9.color = RBTree.BLACK;
+        node9.parent = node0;
+
+        node0.left = node3;
+        node0.right = node9;
+
+        RBNode<String, String> node2 = new RBNode("002", "002", null);
+        node2.color = RBTree.BLACK;
+        node2.parent = node3;
+        node3.left = node2;
 
         RBTree tree = new RBTree();
-        tree.root = node5;
+        tree.root = node0;
 
         A10TreeOperation.show(tree.getRoot());
 
-        tree.remove("000");
+        tree.remove("009");
         A10TreeOperation.show(tree.getRoot());
 
 //        testInsertOpt();
